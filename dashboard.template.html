@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Aluar · Redes Sociales</title>
+<style>
+  .viz-root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page-plane:     #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --grid-line:      #e1e0d9;
+    --axis-line:      #c3c2b7;
+    --border-hair:    rgba(11,11,11,0.10);
+    --success:        #006300;
+    --danger:         #d03b3b;
+    --series-ig:      #2a78d6; /* blue   */
+    --series-li:      #008300; /* green  */
+    --series-yt:      #e87ba4; /* magenta*/
+    --series-1:       #2a78d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page-plane:     #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --grid-line:      #2c2c2a;
+      --axis-line:      #383835;
+      --border-hair:    rgba(255,255,255,0.10);
+      --success:        #0ca30c;
+      --danger:         #e66767;
+      --series-ig:      #3987e5;
+      --series-li:      #008300;
+      --series-yt:      #d55181;
+      --series-1:       #3987e5;
+    }
+  }
+  :root[data-theme="dark"] .viz-root {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page-plane:     #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --grid-line:      #2c2c2a;
+    --axis-line:      #383835;
+    --border-hair:    rgba(255,255,255,0.10);
+    --success:        #0ca30c;
+    --danger:         #e66767;
+    --series-ig:      #3987e5;
+    --series-li:      #008300;
+    --series-yt:      #d55181;
+    --series-1:       #3987e5;
+  }
+
+  * { box-sizing: border-box; }
+  .viz-root {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page-plane);
+    color: var(--text-primary);
+    min-height: 100%;
+    padding: 20px 20px 48px;
+  }
+  .page { max-width: 1180px; margin: 0 auto; }
+
+  .header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 16px; margin-bottom: 18px; flex-wrap: wrap;
+  }
+  .header h1 { font-size: 22px; margin: 0 0 4px; font-weight: 700; }
+  .header .sub { color: var(--text-secondary); font-size: 13px; }
+  .header .meta { text-align: right; font-size: 12px; color: var(--text-muted); }
+
+  .bar {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    background: var(--surface-1); border: 1px solid var(--border-hair);
+    border-radius: 10px; padding: 8px 10px; margin-bottom: 14px;
+  }
+  .bar .grp { display:flex; gap:6px; flex-wrap: wrap; }
+  button.chip {
+    font: inherit; font-size: 12.5px; cursor: pointer; color: var(--text-secondary);
+    background: transparent; border: 1px solid var(--border-hair); border-radius: 999px;
+    padding: 5px 12px; white-space: nowrap;
+  }
+  button.chip:hover { background: var(--grid-line); }
+  button.chip.active { background: var(--series-1); color: #fff; border-color: var(--series-1); font-weight: 600; }
+  .bar input[type=date] {
+    font: inherit; font-size: 12.5px; color: var(--text-primary); background: var(--surface-1);
+    border: 1px solid var(--border-hair); border-radius: 6px; padding: 4px 6px;
+  }
+  .bar .sep { width: 1px; align-self: stretch; background: var(--border-hair); margin: 0 4px; }
+
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border-hair); }
+  .tabs button {
+    font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer;
+    background: transparent; border: none; color: var(--text-secondary);
+    padding: 9px 14px; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .tabs button.active { color: var(--text-primary); border-bottom-color: var(--series-1); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .tile {
+    background: var(--surface-1); border: 1px solid var(--border-hair); border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .tile .label { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+  .tile .value { font-size: 24px; font-weight: 600; line-height: 1.1; }
+  .tile .delta { font-size: 12px; margin-top: 5px; font-weight: 600; }
+  .tile .delta.up { color: var(--success); }
+  .tile .delta.down { color: var(--danger); }
+  .tile .delta.flat { color: var(--text-muted); }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .card {
+    background: var(--surface-1); border: 1px solid var(--border-hair); border-radius: 10px;
+    padding: 14px 16px 8px; overflow: hidden;
+  }
+  .card h3 { font-size: 13.5px; margin: 0 0 2px; font-weight: 600; }
+  .card .cap { font-size: 11.5px; color: var(--text-muted); margin-bottom: 6px; }
+  .card .toggle {
+    float: right; font-size: 11px; color: var(--text-secondary); cursor: pointer;
+    text-decoration: underline; text-underline-offset: 2px; background:none; border:none; font-family:inherit;
+  }
+  .legend { display: flex; gap: 14px; font-size: 12px; color: var(--text-secondary); margin: 2px 0 6px; flex-wrap: wrap; }
+  .legend .key { display: inline-flex; align-items: center; gap: 5px; }
+  .legend .swatch { width: 14px; height: 2px; border-radius: 2px; display:inline-block; }
+
+  .chart-wrap { position: relative; }
+  svg.chart { width: 100%; height: auto; display: block; overflow: visible; }
+  .gridline { stroke: var(--grid-line); stroke-width: 1; }
+  .axisline { stroke: var(--axis-line); stroke-width: 1; }
+  .tick-label { fill: var(--text-muted); font-size: 10.5px; }
+  .end-label { fill: var(--text-primary); font-size: 11px; font-weight: 600; }
+  .crosshair { stroke: var(--text-muted); stroke-width: 1; opacity: 0; pointer-events: none; }
+  .hit-rect { fill: transparent; cursor: crosshair; }
+
+  .tooltip {
+    position: absolute; pointer-events: none; z-index: 5; opacity: 0;
+    background: var(--surface-1); border: 1px solid var(--border-hair); border-radius: 8px;
+    padding: 7px 10px; font-size: 11.5px; box-shadow: 0 4px 14px rgba(0,0,0,.12);
+    white-space: nowrap; transition: opacity .06s linear;
+  }
+  .tooltip .t-date { color: var(--text-muted); font-size: 10.5px; margin-bottom: 3px; }
+  .tooltip .t-row { display: flex; align-items: center; gap: 6px; }
+  .tooltip .t-key { width: 9px; height: 2px; border-radius: 2px; display: inline-block; }
+  .tooltip .t-val { font-weight: 700; margin-left: auto; padding-left: 10px; font-variant-numeric: tabular-nums; }
+
+  table.data-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.data-table caption { display:none; }
+  table.data-table th, table.data-table td {
+    text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--grid-line);
+    vertical-align: top;
+  }
+  table.data-table th { color: var(--text-secondary); font-weight: 600; font-size: 11.5px; }
+  table.data-table td.num, table.data-table th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.data-table td.content-cell { max-width: 340px; }
+  table.data-table td.content-cell .txt {
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    color: var(--text-secondary); font-size: 12px;
+  }
+  table.data-table a { color: var(--series-1); text-decoration: none; }
+  table.data-table a:hover { text-decoration: underline; }
+  .table-scroll { overflow-x: auto; }
+
+  .highlight-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 12px; margin-bottom: 16px; }
+  .hl-card { background: var(--surface-1); border: 1px solid var(--border-hair); border-radius: 10px; padding: 14px 16px; }
+  .hl-card .net { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--text-secondary); margin-bottom: 6px; }
+  .hl-card .txt { font-size: 13px; color: var(--text-primary); margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .hl-card .stats { display: flex; gap: 14px; font-size: 12px; color: var(--text-secondary); flex-wrap: wrap; }
+  .hl-card .stats b { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  .hl-card a.go { font-size: 12px; }
+
+  footer.foot { margin-top: 20px; font-size: 11.5px; color: var(--text-muted); text-align: center; }
+  .empty { color: var(--text-muted); font-size: 13px; padding: 20px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="viz-root">
+  <div class="page">
+    <div class="header">
+      <div>
+        <h1>Aluar · Performance en Redes Sociales</h1>
+        <div class="sub">Instagram · LinkedIn · YouTube — reporte para cliente</div>
+      </div>
+      <div class="meta" id="meta-info"></div>
+    </div>
+
+    <div class="bar" id="filter-bar"></div>
+    <nav class="tabs" id="tabs"></nav>
+    <main id="content"></main>
+
+    <footer class="foot">Datos de Metricool (MCP). Actualización manual — ver fecha de generación arriba.</footer>
+  </div>
+</div>
+
+<script id="dataset" type="application/json">%%DATASET_JSON%%</script>
+<script>
+(function(){
+  "use strict";
+  const DATA = JSON.parse(document.getElementById('dataset').textContent);
+
+  const NET_COLOR = { instagram: 'var(--series-ig)', linkedin: 'var(--series-li)', youtube: 'var(--series-yt)' };
+  const NET_LABEL = { instagram: 'Instagram', linkedin: 'LinkedIn', youtube: 'YouTube' };
+
+  function fmtCompact(n){
+    if(n === null || n === undefined || Number.isNaN(n)) return '—';
+    const sign = n < 0 ? '-' : '';
+    const abs = Math.abs(n);
+    if(abs >= 1e6) return sign + trimZero((abs/1e6).toFixed(1)) + 'M';
+    if(abs >= 1e4) return sign + trimZero((abs/1e3).toFixed(1)) + 'K';
+    return sign + Math.round(abs).toLocaleString('es-AR');
+  }
+  function trimZero(s){ return s.replace(/\.0$/, ''); }
+  function fmtInt(n){ if(n===null||n===undefined) return '—'; return Math.round(n).toLocaleString('es-AR'); }
+  function fmtPct(n, digits){ if(n===null||n===undefined||Number.isNaN(n)) return '—'; return n.toFixed(digits===undefined?1:digits) + '%'; }
+  function fmtDateShort(iso){ const [y,m,d]=iso.split('-'); return d+'/'+m; }
+  function fmtDateLong(iso){ const [y,m,d]=iso.split('-'); return d+'/'+m+'/'+y; }
+  function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  function sum(arr, key){ let s = 0, any=false; for(const r of arr){ if(r[key]!=null){ s += r[key]; any=true; } } return any ? s : null; }
+  function lastVal(arr, key){ for(let i=arr.length-1;i>=0;i--){ if(arr[i][key]!=null) return arr[i][key]; } return null; }
+  function firstVal(arr, key){ for(let i=0;i<arr.length;i++){ if(arr[i][key]!=null) return arr[i][key]; } return null; }
+
+  // ---------- date range handling ----------
+  const allDatesIG = DATA.evolution.instagram.map(r=>r.date);
+  const MAX_DATE = allDatesIG[allDatesIG.length-1];
+  const MIN_DATE = allDatesIG[0];
+
+  function addDays(iso, n){
+    const d = new Date(iso+'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate()+n);
+    return d.toISOString().slice(0,10);
+  }
+  function daysBetween(a,b){
+    return Math.round((new Date(b+'T00:00:00Z') - new Date(a+'T00:00:00Z'))/86400000);
+  }
+  function clampMin(iso){ return iso < MIN_DATE ? MIN_DATE : iso; }
+
+  const PRESETS = [
+    { key:'7d', label:'7 días', from: addDays(MAX_DATE,-6) },
+    { key:'30d', label:'30 días', from: addDays(MAX_DATE,-29) },
+    { key:'90d', label:'90 días', from: addDays(MAX_DATE,-89) },
+    { key:'365d', label:'12 meses', from: clampMin(addDays(MAX_DATE,-364)) },
+  ];
+
+  const state = {
+    tab: 'overview',
+    preset: '30d',
+    from: PRESETS[1].from,
+    to: MAX_DATE,
+  };
+
+  function inRange(r){ return r.date >= state.from && r.date <= state.to; }
+  function prevPeriod(){
+    const len = daysBetween(state.from, state.to) + 1;
+    const to = addDays(state.from, -1);
+    const from = addDays(to, -(len-1));
+    return { from: clampMin(from), to };
+  }
+
+  // ---------- filter bar ----------
+  function renderFilterBar(){
+    const el = document.getElementById('filter-bar');
+    el.innerHTML = '';
+    const grp = document.createElement('div'); grp.className = 'grp';
+    PRESETS.forEach(p=>{
+      const b = document.createElement('button');
+      b.className = 'chip' + (state.preset===p.key ? ' active':'');
+      b.textContent = p.label;
+      b.onclick = () => { state.preset = p.key; state.from = p.from; state.to = MAX_DATE; renderAll(); };
+      grp.appendChild(b);
+    });
+    el.appendChild(grp);
+    const sep = document.createElement('div'); sep.className='sep'; el.appendChild(sep);
+
+    const custom = document.createElement('div'); custom.className='grp';
+    const fromI = document.createElement('input'); fromI.type='date'; fromI.value = state.from; fromI.min = MIN_DATE; fromI.max = state.to;
+    const toI = document.createElement('input'); toI.type='date'; toI.value = state.to; toI.min = state.from; toI.max = MAX_DATE;
+    fromI.onchange = () => { state.preset='custom'; state.from = fromI.value; renderAll(); };
+    toI.onchange = () => { state.preset='custom'; state.to = toI.value; renderAll(); };
+    custom.appendChild(fromI);
+    const dash = document.createElement('span'); dash.textContent='–'; dash.style.color='var(--text-muted)'; custom.appendChild(dash);
+    custom.appendChild(toI);
+    el.appendChild(custom);
+  }
+
+  // ---------- tabs ----------
+  const TABS = [
+    { key:'overview', label:'Resumen' },
+    { key:'instagram', label:'Instagram' },
+    { key:'linkedin', label:'LinkedIn' },
+    { key:'youtube', label:'YouTube' },
+  ];
+  function renderTabs(){
+    const el = document.getElementById('tabs');
+    el.innerHTML = '';
+    TABS.forEach(t=>{
+      const b = document.createElement('button');
+      b.textContent = t.label;
+      b.className = state.tab===t.key ? 'active' : '';
+      b.onclick = () => { state.tab = t.key; renderAll(); };
+      el.appendChild(b);
+    });
+  }
+
+  // ---------- stat tile ----------
+  function statTile(label, value, delta, opts){
+    opts = opts || {};
+    const div = document.createElement('div');
+    div.className = 'tile';
+    const deltaHtml = (delta===null||delta===undefined) ? '' :
+      `<div class="delta ${delta>0?'up':delta<0?'down':'flat'}">${delta>0?'▲':delta<0?'▼':'·'} ${opts.deltaIsPct ? fmtPct(Math.abs(delta)) : fmtCompact(Math.abs(delta))} ${opts.deltaSuffix||'vs. período anterior'}</div>`;
+    div.innerHTML = `<div class="label">${escapeHtml(label)}</div><div class="value">${value}</div>${deltaHtml}`;
+    return div;
+  }
+
+  // ---------- line chart ----------
+  let tooltipEl;
+  function ensureTooltip(){
+    if(!tooltipEl){
+      tooltipEl = document.createElement('div');
+      tooltipEl.className = 'tooltip';
+      document.body.appendChild(tooltipEl);
+    }
+    return tooltipEl;
+  }
+
+  // series: [{name, color, points:[{date,value}], format}]
+  function renderLineChart(container, series, opts){
+    opts = opts || {};
+    const height = opts.height || 200;
+    const width = 640;
+    const padL = 50, padR = 14, padT = 14, padB = 24;
+    const dates = series[0].points.map(p=>p.date);
+    const n = dates.length;
+    let minY = Infinity, maxY = -Infinity;
+    series.forEach(s => s.points.forEach(p => { if(p.value!=null){ if(p.value<minY) minY=p.value; if(p.value>maxY) maxY=p.value; } }));
+    if(!isFinite(minY)){ minY = 0; maxY = 1; }
+    if(minY===maxY){ minY -= 1; maxY += 1; }
+    const padValue = (maxY-minY) * 0.08;
+    minY -= padValue; maxY += padValue;
+    if(opts.startAtZero && minY > 0) minY = 0;
+
+    const x = i => padL + (n<=1 ? 0 : (i/(n-1)) * (width-padL-padR));
+    const y = v => padT + (1 - (v-minY)/(maxY-minY)) * (height-padT-padB);
+
+    const wrap = document.createElement('div');
+    wrap.className = 'chart-wrap';
+
+    // gridlines (4 steps)
+    const steps = 4;
+    let gridSvg = '';
+    for(let i=0;i<=steps;i++){
+      const val = minY + (maxY-minY)*i/steps;
+      const yy = y(val);
+      gridSvg += `<line class="gridline" x1="${padL}" x2="${width-padR}" y1="${yy}" y2="${yy}"></line>`;
+      gridSvg += `<text class="tick-label" x="${padL-6}" y="${yy+3}" text-anchor="end">${fmtCompact(val)}</text>`;
+    }
+    gridSvg += `<line class="axisline" x1="${padL}" x2="${width-padR}" y1="${height-padB}" y2="${height-padB}"></line>`;
+
+    let seriesSvg = '';
+    series.forEach(s => {
+      let d = '', pen = false;
+      for(let i=0;i<n;i++){
+        const p = s.points[i];
+        if(p.value==null){ pen = false; continue; }
+        const cmd = pen ? 'L' : 'M';
+        d += `${cmd}${x(i).toFixed(1)},${y(p.value).toFixed(1)} `;
+        pen = true;
+      }
+      seriesSvg += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>`;
+      // end dot + label
+      for(let i=n-1;i>=0;i--){
+        if(s.points[i].value!=null){
+          seriesSvg += `<circle cx="${x(i)}" cy="${y(s.points[i].value)}" r="4" fill="${s.color}" stroke="var(--surface-1)" stroke-width="2"></circle>`;
+          if(series.length===1){
+            seriesSvg += `<text class="end-label" x="${x(i)}" y="${y(s.points[i].value)-10}" text-anchor="end">${(s.format||fmtCompact)(s.points[i].value)}</text>`;
+          }
+          break;
+        }
+      }
+    });
+
+    // x-axis: first / mid / last date labels
+    const idxs = n>1 ? [0, Math.floor((n-1)/2), n-1] : [0];
+    let xLabels = '';
+    idxs.forEach(i => {
+      xLabels += `<text class="tick-label" x="${x(i)}" y="${height-6}" text-anchor="${i===0?'start':i===n-1?'end':'middle'}">${fmtDateShort(dates[i])}</text>`;
+    });
+
+    wrap.innerHTML = `
+      <svg class="chart" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+        ${gridSvg}
+        ${seriesSvg}
+        ${xLabels}
+        <line class="crosshair" x1="0" x2="0" y1="${padT}" y2="${height-padB}"></line>
+        <rect class="hit-rect" x="${padL}" y="0" width="${width-padL-padR}" height="${height}"></rect>
+      </svg>`;
+
+    const svg = wrap.querySelector('svg');
+    const hit = wrap.querySelector('.hit-rect');
+    const crosshair = wrap.querySelector('.crosshair');
+    const tip = ensureTooltip();
+
+    hit.addEventListener('pointermove', (ev) => {
+      const rect = svg.getBoundingClientRect();
+      const relX = (ev.clientX - rect.left) / rect.width * width;
+      let idx = Math.round(((relX - padL) / (width-padL-padR)) * (n-1));
+      idx = Math.max(0, Math.min(n-1, idx));
+      crosshair.setAttribute('x1', x(idx)); crosshair.setAttribute('x2', x(idx));
+      crosshair.style.opacity = 1;
+      let rows = '';
+      series.forEach(s => {
+        const v = s.points[idx].value;
+        rows += `<div class="t-row"><span class="t-key" style="background:${s.color}"></span>${series.length>1?escapeHtml(s.name):''}<span class="t-val">${(s.format||fmtCompact)(v)}</span></div>`;
+      });
+      tip.innerHTML = `<div class="t-date">${fmtDateLong(dates[idx])}</div>${rows}`;
+      tip.style.left = (ev.clientX + 14) + 'px';
+      tip.style.top = (ev.clientY + 14) + 'px';
+      tip.style.opacity = 1;
+    });
+    hit.addEventListener('pointerleave', () => { crosshair.style.opacity = 0; tip.style.opacity = 0; });
+
+    container.appendChild(wrap);
+
+    if(series.length>1){
+      const legend = document.createElement('div'); legend.className='legend';
+      series.forEach(s=>{
+        legend.innerHTML += `<span class="key"><span class="swatch" style="background:${s.color}"></span>${escapeHtml(s.name)}</span>`;
+      });
+      container.insertBefore(legend, wrap);
+    }
+
+    // table-view toggle
+    const table = document.createElement('div');
+    table.className = 'table-scroll';
+    table.style.display = 'none';
+    let thead = '<tr><th>Fecha</th>' + series.map(s=>`<th class="num">${escapeHtml(series.length>1?s.name:'Valor')}</th>`).join('') + '</tr>';
+    let tbody = '';
+    for(let i=n-1;i>=0;i--){
+      tbody += '<tr><td>'+fmtDateLong(dates[i])+'</td>' + series.map(s=>`<td class="num">${(s.format||fmtCompact)(s.points[i].value)}</td>`).join('') + '</tr>';
+    }
+    table.innerHTML = `<table class="data-table">${thead}${tbody}</table>`;
+    container.appendChild(table);
+
+    const toggle = document.createElement('button');
+    toggle.className = 'toggle';
+    toggle.textContent = 'Ver tabla';
+    toggle.onclick = () => {
+      const showingTable = table.style.display !== 'none';
+      table.style.display = showingTable ? 'none' : 'block';
+      wrap.style.display = showingTable ? 'block' : 'none';
+      if(legendRef) legendRef.style.display = showingTable ? 'flex' : 'none';
+      toggle.textContent = showingTable ? 'Ver tabla' : 'Ver gráfico';
+    };
+    var legendRef = container.querySelector('.legend');
+    container.insertBefore(toggle, container.firstChild.nextSibling);
+  }
+
+  function chartCard(title, caption){
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `<h3>${escapeHtml(title)}</h3><div class="cap">${escapeHtml(caption||'')}</div>`;
+    return card;
+  }
+
+  // ---------- top content table ----------
+  function topContentTable(container, network, range){
+    const rows = DATA.topContent[network].filter(r => r.date >= range.from && r.date <= range.to);
+    const card = document.createElement('div');
+    card.className = 'card';
+    if(rows.length===0){
+      card.innerHTML = `<h3>Publicaciones destacadas</h3><div class="empty">Sin publicaciones en el rango seleccionado.</div>`;
+      container.appendChild(card);
+      return;
+    }
+    let cols, sortKey;
+    if(network==='instagram'){
+      cols = [['Fecha','date'],['Tipo','type'],['Alcance','reach'],['Interacciones','interactions'],['Likes','likes'],['Comentarios','comments'],['Guardados','saved']];
+      sortKey = 'interactions';
+    } else if(network==='linkedin'){
+      cols = [['Fecha','date'],['Tipo','type'],['Impresiones','impressions'],['Reacciones','likes'],['Comentarios','comments'],['Compartidos','shares']];
+      sortKey = 'impressions';
+    } else {
+      cols = [['Fecha','date'],['Título','title'],['Vistas','views'],['Min. vistos','watchMinutes'],['Likes','likes'],['Comentarios','comments']];
+      sortKey = 'views';
+    }
+    const sorted = rows.slice().sort((a,b)=>(b[sortKey]||0)-(a[sortKey]||0)).slice(0,8);
+    let thead = '<tr>' + cols.map(c=>`<th${c[1]!=='date'&&c[1]!=='type'&&c[1]!=='title'?' class="num"':''}>${c[0]}</th>`).join('') + '</tr>';
+    let tbody = sorted.map(r => {
+      return '<tr>' + cols.map(c=>{
+        const key = c[1];
+        if(key==='date') return `<td>${fmtDateShort(r.date)}</td>`;
+        if(key==='type') return `<td>${escapeHtml(r.type||'—')}</td>`;
+        if(key==='title'){
+          const label = r.title && r.title.trim() ? r.title : (r.content ? r.content.slice(0,80) : 'Ver publicación');
+          return `<td class="content-cell"><a href="${r.watchUrl||r.url}" target="_blank" rel="noopener">${escapeHtml(label)}</a></td>`;
+        }
+        if(key==='watchMinutes') return `<td class="num">${fmtCompact(r[key])}</td>`;
+        return `<td class="num">${fmtCompact(r[key])}</td>`;
+      }).join('') + '</tr>';
+    }).join('');
+    card.innerHTML = `<h3>Publicaciones destacadas</h3><div class="cap">Top 8 del período por ${cols.find(c=>c[1]===sortKey)[0].toLowerCase()}</div>
+      <div class="table-scroll"><table class="data-table">${thead}${tbody}</table></div>`;
+    container.appendChild(card);
+  }
+
+  // ---------- overview tab ----------
+  function renderOverview(){
+    const content = document.getElementById('content');
+    const range = { from: state.from, to: state.to };
+    const prev = prevPeriod();
+
+    const igR = DATA.evolution.instagram.filter(inRange);
+    const liR = DATA.evolution.linkedin.filter(inRange);
+    const ytR = DATA.evolution.youtube.filter(inRange);
+    const igP = DATA.evolution.instagram.filter(r=>r.date>=prev.from && r.date<=prev.to);
+    const liP = DATA.evolution.linkedin.filter(r=>r.date>=prev.from && r.date<=prev.to);
+    const ytP = DATA.evolution.youtube.filter(r=>r.date>=prev.from && r.date<=prev.to);
+
+    const igFollowers = lastVal(igR,'followers'), liFollowers = lastVal(liR,'followers'), ytSubs = lastVal(ytR,'subscribers');
+    const igFollowersPrev = lastVal(igP,'followers'), liFollowersPrev = lastVal(liP,'followers'), ytSubsPrev = lastVal(ytP,'subscribers');
+    const totalAudience = (igFollowers||0)+(liFollowers||0)+(ytSubs||0);
+    const totalAudiencePrev = (igFollowersPrev||0)+(liFollowersPrev||0)+(ytSubsPrev||0);
+
+    const igInter = sum(igR,'postsInteractions')||0;
+    const liInter = sum(liR,'accountPostInteractions')||0;
+    const ytInter = (sum(ytR,'publishedVideoLikes')||0)+(sum(ytR,'publishedVideoComments')||0);
+    const totalInter = igInter+liInter+ytInter;
+    const igInterPrev = sum(igP,'postsInteractions')||0;
+    const liInterPrev = sum(liP,'accountPostInteractions')||0;
+    const ytInterPrev = (sum(ytP,'publishedVideoLikes')||0)+(sum(ytP,'publishedVideoComments')||0);
+    const totalInterPrev = igInterPrev+liInterPrev+ytInterPrev;
+
+    const igPosts = sum(igR,'postsCount')||0, liPosts = sum(liR,'accountPostCount')||0, ytVideos = sum(ytR,'videos')||0;
+    const totalPosts = igPosts+liPosts+ytVideos;
+    const days = daysBetween(range.from, range.to)+1;
+    const cadence = totalPosts / (days/7);
+
+    const postsPrevTotal = (sum(igP,'postsCount')||0)+(sum(liP,'accountPostCount')||0)+(sum(ytP,'videos')||0);
+
+    const grid = document.createElement('div'); grid.className = 'grid';
+    grid.appendChild(statTile('Audiencia total (IG+LI+YT)', fmtCompact(totalAudience), totalAudience-totalAudiencePrev));
+    grid.appendChild(statTile('Interacciones totales', fmtCompact(totalInter), totalInter-totalInterPrev));
+    grid.appendChild(statTile('Publicaciones en el período', fmtInt(totalPosts), totalPosts-postsPrevTotal));
+    grid.appendChild(statTile('Cadencia de publicación', cadence.toFixed(1)+'/sem', null));
+    content.appendChild(grid);
+
+    // indexed growth chart
+    const card = chartCard('Crecimiento de audiencia (indexado a 100 al inicio del período)', 'Compara el ritmo de crecimiento entre redes, independientemente de su tamaño.');
+    const mkIdx = (rows, key) => {
+      const base = firstVal(rows, key);
+      return rows.map(r => ({ date: r.date, value: (r[key]==null || !base) ? null : (r[key]/base*100) }));
+    };
+    const idxFormat = v => v==null ? '—' : v.toFixed(1);
+    renderLineChart(card, [
+      { name:'Instagram', color:'var(--series-ig)', points: mkIdx(igR,'followers'), format: idxFormat },
+      { name:'LinkedIn', color:'var(--series-li)', points: mkIdx(liR,'followers'), format: idxFormat },
+      { name:'YouTube', color:'var(--series-yt)', points: mkIdx(ytR,'subscribers'), format: idxFormat },
+    ]);
+    content.appendChild(card);
+
+    // highlight cards: top post per network within range
+    const hlGrid = document.createElement('div'); hlGrid.className = 'highlight-grid';
+    const pick = (network, metricKey) => {
+      const rows = DATA.topContent[network].filter(r=>r.date>=range.from && r.date<=range.to);
+      if(rows.length===0) return null;
+      return rows.slice().sort((a,b)=>(b[metricKey]||0)-(a[metricKey]||0))[0];
+    };
+    const hlSpecs = [
+      { net:'instagram', metric:'interactions', label:'Interacciones' },
+      { net:'linkedin', metric:'impressions', label:'Impresiones' },
+      { net:'youtube', metric:'views', label:'Vistas' },
+    ];
+    hlSpecs.forEach(spec => {
+      const post = pick(spec.net, spec.metric);
+      const div = document.createElement('div'); div.className='hl-card';
+      if(!post){
+        div.innerHTML = `<div class="net">${NET_LABEL[spec.net]} · mejor publicación</div><div class="empty" style="padding:6px 0">Sin publicaciones en el rango.</div>`;
+      } else {
+        const txt = post.title && post.title.trim() ? post.title : (post.content ? post.content : 'Ver publicación');
+        div.innerHTML = `<div class="net">${NET_LABEL[spec.net]} · mejor publicación (${fmtDateShort(post.date)})</div>
+          <div class="txt">${escapeHtml(txt)}</div>
+          <div class="stats"><span>${spec.label}: <b>${fmtCompact(post[spec.metric])}</b></span>
+          ${post.likes!=null?`<span>Likes: <b>${fmtCompact(post.likes)}</b></span>`:''}
+          ${post.comments!=null?`<span>Comentarios: <b>${fmtCompact(post.comments)}</b></span>`:''}</div>
+          <a class="go" href="${post.watchUrl||post.url}" target="_blank" rel="noopener">Ver publicación →</a>`;
+      }
+      hlGrid.appendChild(div);
+    });
+    content.appendChild(hlGrid);
+  }
+
+  // ---------- per-network tab ----------
+  function renderNetwork(network){
+    const content = document.getElementById('content');
+    const range = { from: state.from, to: state.to };
+    const prev = prevPeriod();
+    const rows = DATA.evolution[network].filter(inRange);
+    const rowsPrev = DATA.evolution[network].filter(r=>r.date>=prev.from && r.date<=prev.to);
+
+    const grid = document.createElement('div'); grid.className='grid';
+
+    if(network==='instagram'){
+      const followers = lastVal(rows,'followers'), followersPrev = lastVal(rowsPrev,'followers');
+      const reach = sum(rows,'reach')||0, reachPrev = sum(rowsPrev,'reach')||0;
+      const inter = sum(rows,'postsInteractions')||0, interPrev = sum(rowsPrev,'postsInteractions')||0;
+      const posts = sum(rows,'postsCount')||0, postsPrev = sum(rowsPrev,'postsCount')||0;
+      const reelsViews = sum(rows,'reelsViews')||0, reelsViewsPrev = sum(rowsPrev,'reelsViews')||0;
+      const engRate = reach ? inter/reach*100 : null;
+      const engRatePrev = reachPrev ? interPrev/reachPrev*100 : null;
+
+      grid.appendChild(statTile('Seguidores', fmtCompact(followers), followers-followersPrev));
+      grid.appendChild(statTile('Alcance', fmtCompact(reach), reach-reachPrev));
+      grid.appendChild(statTile('Interacciones', fmtCompact(inter), inter-interPrev));
+      grid.appendChild(statTile('Tasa de engagement', fmtPct(engRate), engRate!=null&&engRatePrev!=null?engRate-engRatePrev:null, {deltaIsPct:true}));
+      grid.appendChild(statTile('Publicaciones', fmtInt(posts), posts-postsPrev));
+      grid.appendChild(statTile('Vistas de Reels', fmtCompact(reelsViews), reelsViews-reelsViewsPrev));
+      content.appendChild(grid);
+
+      const cards = document.createElement('div'); cards.className='cards';
+      let c = chartCard('Seguidores', 'Evolución diaria en el rango seleccionado.');
+      renderLineChart(c, [{ name:'Seguidores', color:NET_COLOR.instagram, points: rows.map(r=>({date:r.date,value:r.followers})) }]);
+      cards.appendChild(c);
+      c = chartCard('Alcance diario', 'Cuentas alcanzadas por día (organico + pago).');
+      renderLineChart(c, [{ name:'Alcance', color:NET_COLOR.instagram, points: rows.map(r=>({date:r.date,value:r.reach})) }]);
+      cards.appendChild(c);
+      c = chartCard('Interacciones diarias', 'Likes + comentarios + guardados + compartidos (posts y reels).');
+      renderLineChart(c, [{ name:'Interacciones', color:NET_COLOR.instagram, points: rows.map(r=>({date:r.date,value:r.postsInteractions})) }]);
+      cards.appendChild(c);
+      content.appendChild(cards);
+
+    } else if(network==='linkedin'){
+      const followers = lastVal(rows,'followers'), followersPrev = lastVal(rowsPrev,'followers');
+      const impressions = sum(rows,'accountPostImpressions')||0, impressionsPrev = sum(rowsPrev,'accountPostImpressions')||0;
+      const inter = sum(rows,'accountPostInteractions')||0, interPrev = sum(rowsPrev,'accountPostInteractions')||0;
+      const posts = sum(rows,'accountPostCount')||0, postsPrev = sum(rowsPrev,'accountPostCount')||0;
+      const visitors = sum(rows,'accountPageUniqueImpressions')||0, visitorsPrev = sum(rowsPrev,'accountPageUniqueImpressions')||0;
+      const engRate = impressions ? inter/impressions*100 : null;
+      const engRatePrev = impressionsPrev ? interPrev/impressionsPrev*100 : null;
+
+      grid.appendChild(statTile('Seguidores', fmtCompact(followers), followers-followersPrev));
+      grid.appendChild(statTile('Impresiones', fmtCompact(impressions), impressions-impressionsPrev));
+      grid.appendChild(statTile('Interacciones', fmtCompact(inter), inter-interPrev));
+      grid.appendChild(statTile('Tasa de engagement', fmtPct(engRate), engRate!=null&&engRatePrev!=null?engRate-engRatePrev:null, {deltaIsPct:true}));
+      grid.appendChild(statTile('Publicaciones', fmtInt(posts), posts-postsPrev));
+      grid.appendChild(statTile('Visitantes de página', fmtCompact(visitors), visitors-visitorsPrev));
+      content.appendChild(grid);
+
+      const cards = document.createElement('div'); cards.className='cards';
+      let c = chartCard('Seguidores', 'Evolución diaria en el rango seleccionado.');
+      renderLineChart(c, [{ name:'Seguidores', color:NET_COLOR.linkedin, points: rows.map(r=>({date:r.date,value:r.followers})) }]);
+      cards.appendChild(c);
+      c = chartCard('Impresiones diarias', 'Veces que se mostraron las publicaciones de la página.');
+      renderLineChart(c, [{ name:'Impresiones', color:NET_COLOR.linkedin, points: rows.map(r=>({date:r.date,value:r.accountPostImpressions})) }]);
+      cards.appendChild(c);
+      c = chartCard('Interacciones diarias', 'Reacciones + comentarios + clics.');
+      renderLineChart(c, [{ name:'Interacciones', color:NET_COLOR.linkedin, points: rows.map(r=>({date:r.date,value:r.accountPostInteractions})) }]);
+      cards.appendChild(c);
+      content.appendChild(cards);
+
+    } else {
+      const subs = lastVal(rows,'subscribers'), subsPrev = lastVal(rowsPrev,'subscribers');
+      const views = sum(rows,'videoViews')||0, viewsPrev = sum(rowsPrev,'videoViews')||0;
+      const videos = sum(rows,'videos')||0, videosPrev = sum(rowsPrev,'videos')||0;
+      const pubViews = sum(rows,'publishedVideoViews')||0, pubViewsPrev = sum(rowsPrev,'publishedVideoViews')||0;
+      const likes = sum(rows,'publishedVideoLikes')||0, likesPrev = sum(rowsPrev,'publishedVideoLikes')||0;
+      const comments = sum(rows,'publishedVideoComments')||0, commentsPrev = sum(rowsPrev,'publishedVideoComments')||0;
+
+      grid.appendChild(statTile('Suscriptores', fmtCompact(subs), subs-subsPrev));
+      grid.appendChild(statTile('Vistas totales', fmtCompact(views), views-viewsPrev));
+      grid.appendChild(statTile('Videos publicados', fmtInt(videos), videos-videosPrev));
+      grid.appendChild(statTile('Vistas (videos del período)', fmtCompact(pubViews), pubViews-pubViewsPrev));
+      grid.appendChild(statTile('Likes', fmtCompact(likes), likes-likesPrev));
+      grid.appendChild(statTile('Comentarios', fmtCompact(comments), comments-commentsPrev));
+      content.appendChild(grid);
+
+      const cards = document.createElement('div'); cards.className='cards';
+      let c = chartCard('Suscriptores', 'Evolución diaria en el rango seleccionado.');
+      renderLineChart(c, [{ name:'Suscriptores', color:NET_COLOR.youtube, points: rows.map(r=>({date:r.date,value:r.subscribers})) }]);
+      cards.appendChild(c);
+      c = chartCard('Vistas diarias', 'Vistas totales del canal por día.');
+      renderLineChart(c, [{ name:'Vistas', color:NET_COLOR.youtube, points: rows.map(r=>({date:r.date,value:r.videoViews})) }]);
+      cards.appendChild(c);
+      content.appendChild(cards);
+    }
+
+    topContentTable(content, network, range);
+  }
+
+  function renderAll(){
+    renderFilterBar();
+    renderTabs();
+    const content = document.getElementById('content');
+    content.innerHTML = '';
+    document.getElementById('meta-info').textContent =
+      'Rango: ' + fmtDateLong(state.from) + ' – ' + fmtDateLong(state.to) + ' · generado ' + new Date(DATA.meta.generatedAt).toLocaleString('es-AR');
+    if(state.tab==='overview') renderOverview();
+    else renderNetwork(state.tab);
+  }
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
