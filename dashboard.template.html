@@ -20,6 +20,10 @@
     --series-li:      #008300; /* green  */
     --series-yt:      #e87ba4; /* magenta*/
     --series-1:       #2a78d6;
+    --shadow-card:    0 1px 2px rgba(11,11,11,0.05), 0 2px 10px rgba(11,11,11,0.05);
+    --shadow-sticky:  0 2px 10px rgba(11,11,11,0.07);
+    --surface-2:      #f1f0ea;
+    --cat-1: #2a78d6; --cat-2: #008300; --cat-3: #e87ba4; --cat-4: #eda100; --cat-5: #1baf7a; --cat-6: #898781;
   }
   @media (prefers-color-scheme: dark) {
     :root:where(:not([data-theme="light"])) .viz-root {
@@ -38,6 +42,10 @@
       --series-li:      #008300;
       --series-yt:      #d55181;
       --series-1:       #3987e5;
+      --shadow-card:    0 1px 2px rgba(0,0,0,0.35), 0 2px 10px rgba(0,0,0,0.28);
+      --shadow-sticky:  0 2px 12px rgba(0,0,0,0.35);
+      --surface-2:      #242422;
+      --cat-1: #3987e5; --cat-2: #008300; --cat-3: #d55181; --cat-4: #c98500; --cat-5: #199e70; --cat-6: #898781;
     }
   }
   :root[data-theme="dark"] .viz-root {
@@ -56,6 +64,10 @@
     --series-li:      #008300;
     --series-yt:      #d55181;
     --series-1:       #3987e5;
+    --shadow-card:    0 1px 2px rgba(0,0,0,0.35), 0 2px 10px rgba(0,0,0,0.28);
+    --shadow-sticky:  0 2px 12px rgba(0,0,0,0.35);
+    --surface-2:      #242422;
+    --cat-1: #3987e5; --cat-2: #008300; --cat-3: #d55181; --cat-4: #c98500; --cat-5: #199e70; --cat-6: #898781;
   }
 
   * { box-sizing: border-box; }
@@ -72,14 +84,23 @@
     display: flex; align-items: flex-start; justify-content: space-between;
     gap: 16px; margin-bottom: 18px; flex-wrap: wrap;
   }
+  .header .brand { display: flex; align-items: center; gap: 14px; }
+  .header .logo { height: 52px; width: auto; display: block; flex-shrink: 0; }
   .header h1 { font-size: 22px; margin: 0 0 4px; font-weight: 700; }
   .header .sub { color: var(--text-secondary); font-size: 13px; }
   .header .meta { text-align: right; font-size: 12px; color: var(--text-muted); }
+
+  .controls-sticky {
+    position: sticky; top: 0; z-index: 20; background: var(--page-plane);
+    padding-top: 4px; margin: 0 -20px; padding-left: 20px; padding-right: 20px;
+    box-shadow: var(--shadow-sticky);
+  }
 
   .bar {
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
     background: var(--surface-1); border: 1px solid var(--border-hair);
     border-radius: 10px; padding: 8px 10px; margin-bottom: 14px;
+    box-shadow: var(--shadow-card);
   }
   .bar .grp { display:flex; gap:6px; flex-wrap: wrap; }
   button.chip {
@@ -95,7 +116,7 @@
   }
   .bar .sep { width: 1px; align-self: stretch; background: var(--border-hair); margin: 0 4px; }
 
-  .tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border-hair); }
+  .tabs { display: flex; gap: 4px; margin-bottom: 0; padding-bottom: 12px; border-bottom: 1px solid var(--border-hair); }
   .tabs button {
     font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer;
     background: transparent; border: none; color: var(--text-secondary);
@@ -103,10 +124,13 @@
   }
   .tabs button.active { color: var(--text-primary); border-bottom-color: var(--series-1); }
 
+  main#content { margin-top: 16px; }
+
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
   .tile {
     background: var(--surface-1); border: 1px solid var(--border-hair); border-radius: 10px;
-    padding: 12px 14px;
+    padding: 12px 14px; box-shadow: var(--shadow-card);
+    border-left: 3px solid var(--tile-accent, transparent);
   }
   .tile .label { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
   .tile .value { font-size: 24px; font-weight: 600; line-height: 1.1; }
@@ -115,10 +139,13 @@
   .tile .delta.down { color: var(--danger); }
   .tile .delta.flat { color: var(--text-muted); }
 
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .cards.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .cards .card.wide { grid-column: 1 / -1; }
+  @media (max-width: 700px) { .cards { grid-template-columns: 1fr; } }
   .card {
     background: var(--surface-1); border: 1px solid var(--border-hair); border-radius: 10px;
-    padding: 14px 16px 8px; overflow: hidden;
+    padding: 14px 16px 8px; overflow: hidden; box-shadow: var(--shadow-card);
   }
   .card h3 { font-size: 13.5px; margin: 0 0 2px; font-weight: 600; }
   .card .cap { font-size: 11.5px; color: var(--text-muted); margin-bottom: 6px; }
@@ -130,6 +157,15 @@
   .legend .key { display: inline-flex; align-items: center; gap: 5px; }
   .legend .swatch { width: 14px; height: 2px; border-radius: 2px; display:inline-block; }
 
+  .demo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 12px; margin-bottom: 16px; }
+  .donut-body { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .donut-body svg { flex-shrink: 0; }
+  .donut-legend { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--text-secondary); flex: 1; min-width: 140px; }
+  .donut-legend .key { display: flex; align-items: center; gap: 7px; justify-content: space-between; }
+  .donut-legend .key .name { display: flex; align-items: center; gap: 7px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .donut-legend .swatch { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; display:inline-block; }
+  .donut-legend .pct { font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+
   .chart-wrap { position: relative; }
   svg.chart { width: 100%; height: auto; display: block; overflow: visible; }
   .gridline { stroke: var(--grid-line); stroke-width: 1; }
@@ -140,8 +176,8 @@
   .hit-rect { fill: transparent; cursor: crosshair; }
 
   .tooltip {
-    position: absolute; pointer-events: none; z-index: 5; opacity: 0;
-    background: var(--surface-1); border: 1px solid var(--border-hair); border-radius: 8px;
+    position: fixed; pointer-events: none; z-index: 50; opacity: 0;
+    background: var(--surface-1); color: var(--text-primary); border: 1px solid var(--border-hair); border-radius: 8px;
     padding: 7px 10px; font-size: 11.5px; box-shadow: 0 4px 14px rgba(0,0,0,.12);
     white-space: nowrap; transition: opacity .06s linear;
   }
@@ -156,7 +192,10 @@
     text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--grid-line);
     vertical-align: top;
   }
-  table.data-table th { color: var(--text-secondary); font-weight: 600; font-size: 11.5px; }
+  table.data-table thead th { color: var(--text-secondary); font-weight: 700; font-size: 11.5px; background: var(--surface-2); border-bottom: 1px solid var(--axis-line); }
+  table.data-table thead th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+  table.data-table thead th.sortable:hover { color: var(--text-primary); }
+  table.data-table tbody tr:nth-child(even) td { background: var(--surface-2); }
   table.data-table td.num, table.data-table th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   table.data-table td.content-cell { max-width: 340px; }
   table.data-table td.content-cell .txt {
@@ -168,7 +207,7 @@
   .table-scroll { overflow-x: auto; }
 
   .highlight-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 12px; margin-bottom: 16px; }
-  .hl-card { background: var(--surface-1); border: 1px solid var(--border-hair); border-radius: 10px; padding: 14px 16px; }
+  .hl-card { background: var(--surface-1); border: 1px solid var(--border-hair); border-left: 3px solid var(--hl-accent, transparent); border-radius: 10px; padding: 14px 16px; box-shadow: var(--shadow-card); }
   .hl-card .net { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--text-secondary); margin-bottom: 6px; }
   .hl-card .txt { font-size: 13px; color: var(--text-primary); margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
   .hl-card .stats { display: flex; gap: 14px; font-size: 12px; color: var(--text-secondary); flex-wrap: wrap; }
@@ -183,15 +222,20 @@
 <div class="viz-root">
   <div class="page">
     <div class="header">
-      <div>
-        <h1>Aluar · Performance en Redes Sociales</h1>
-        <div class="sub">Instagram · LinkedIn · YouTube — reporte para cliente</div>
+      <div class="brand">
+        <img class="logo" alt="Aluar" src="data:image/png;base64,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">
+        <div>
+          <h1>Aluar · Performance en Redes Sociales</h1>
+          <div class="sub">Instagram · LinkedIn · YouTube — reporte para cliente</div>
+        </div>
       </div>
       <div class="meta" id="meta-info"></div>
     </div>
 
-    <div class="bar" id="filter-bar"></div>
-    <nav class="tabs" id="tabs"></nav>
+    <div class="controls-sticky">
+      <div class="bar" id="filter-bar"></div>
+      <nav class="tabs" id="tabs"></nav>
+    </div>
     <main id="content"></main>
 
     <footer class="foot">Datos de Metricool (MCP). Actualización manual — ver fecha de generación arriba.</footer>
@@ -316,7 +360,60 @@
     const deltaHtml = (delta===null||delta===undefined) ? '' :
       `<div class="delta ${delta>0?'up':delta<0?'down':'flat'}">${delta>0?'▲':delta<0?'▼':'·'} ${opts.deltaIsPct ? fmtPct(Math.abs(delta)) : fmtCompact(Math.abs(delta))} ${opts.deltaSuffix||'vs. período anterior'}</div>`;
     div.innerHTML = `<div class="label">${escapeHtml(label)}</div><div class="value">${value}</div>${deltaHtml}`;
+    if(opts.accent) div.style.setProperty('--tile-accent', opts.accent);
     return div;
+  }
+
+  // ---------- mini bar chart (cross-network comparison) ----------
+  // Renders a small set of horizontal bars (one per network) into an existing
+  // card container. Each bar has its own scale (bar length relative to the
+  // max within this metric only) — never compare across metrics of different units.
+  function renderMiniBars(container, items){
+    const maxV = Math.max(1, ...items.map(it => it.value || 0));
+    const rows = document.createElement('div');
+    rows.style.cssText = 'display:flex;flex-direction:column;gap:10px;margin-top:4px';
+    items.forEach(it => {
+      const pct = Math.max(2, (it.value || 0) / maxV * 100);
+      const row = document.createElement('div');
+      row.innerHTML = `
+        <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--text-secondary);margin-bottom:3px">
+          <span>${escapeHtml(it.label)}</span>
+          <span style="font-weight:700;color:var(--text-primary);font-variant-numeric:tabular-nums">${fmtCompact(it.value)}</span>
+        </div>
+        <div style="height:10px;border-radius:4px;background:var(--grid-line);overflow:hidden">
+          <div style="height:100%;width:${pct.toFixed(1)}%;border-radius:4px;background:${it.color}"></div>
+        </div>`;
+      rows.appendChild(row);
+    });
+    container.appendChild(rows);
+  }
+
+  // ---------- donut chart (demographic breakdowns) ----------
+  // items: [{label, pct}], expected pre-sorted desc with any "Otros" bucket last.
+  function renderDonutChart(container, items){
+    const size = 148, R = 54, strokeW = 22, cx = size/2, cy = size/2;
+    const C = 2 * Math.PI * R;
+    const colors = ['var(--cat-1)','var(--cat-2)','var(--cat-3)','var(--cat-4)','var(--cat-5)'];
+    let cum = 0, circles = '', legendHtml = '', colorIdx = 0;
+    items.forEach(it => {
+      const color = it.label === 'Otros' ? 'var(--cat-6)' : colors[colorIdx++ % colors.length];
+      const segLen = Math.max(0, (it.pct/100) * C);
+      circles += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-dasharray="${segLen.toFixed(2)} ${(C-segLen).toFixed(2)}" stroke-dashoffset="${(-cum).toFixed(2)}"></circle>`;
+      cum += segLen;
+      legendHtml += `<div class="key"><span class="name"><span class="swatch" style="background:${color}"></span>${escapeHtml(it.label)}</span><span class="pct">${fmtPct(it.pct)}</span></div>`;
+    });
+    const top = items.reduce((best, it) => (!best || it.pct > best.pct) ? it : best, null) || { label:'—', pct:0 };
+    const topLabel = top.label.length > 13 ? top.label.slice(0,12)+'…' : top.label;
+    const wrap = document.createElement('div');
+    wrap.className = 'donut-body';
+    wrap.innerHTML = `
+      <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+        <g transform="rotate(-90 ${cx} ${cy})">${circles}</g>
+        <text x="${cx}" y="${cy-3}" text-anchor="middle" font-size="16" font-weight="700" fill="var(--text-primary)">${fmtPct(top.pct)}</text>
+        <text x="${cx}" y="${cy+13}" text-anchor="middle" font-size="9.5" fill="var(--text-muted)">${escapeHtml(topLabel)}</text>
+      </svg>
+      <div class="donut-legend">${legendHtml}</div>`;
+    container.appendChild(wrap);
   }
 
   // ---------- line chart ----------
@@ -325,7 +422,7 @@
     if(!tooltipEl){
       tooltipEl = document.createElement('div');
       tooltipEl.className = 'tooltip';
-      document.body.appendChild(tooltipEl);
+      document.querySelector('.viz-root').appendChild(tooltipEl);
     }
     return tooltipEl;
   }
@@ -342,9 +439,13 @@
     series.forEach(s => s.points.forEach(p => { if(p.value!=null){ if(p.value<minY) minY=p.value; if(p.value>maxY) maxY=p.value; } }));
     if(!isFinite(minY)){ minY = 0; maxY = 1; }
     if(minY===maxY){ minY -= 1; maxY += 1; }
-    const padValue = (maxY-minY) * 0.08;
-    minY -= padValue; maxY += padValue;
-    if(opts.startAtZero && minY > 0) minY = 0;
+    if(opts.bars || opts.startAtZero){
+      minY = Math.min(0, minY);
+      maxY = maxY + (maxY-minY) * 0.08;
+    } else {
+      const padValue = (maxY-minY) * 0.08;
+      minY -= padValue; maxY += padValue;
+    }
 
     const x = i => padL + (n<=1 ? 0 : (i/(n-1)) * (width-padL-padR));
     const y = v => padT + (1 - (v-minY)/(maxY-minY)) * (height-padT-padB);
@@ -363,8 +464,37 @@
     }
     gridSvg += `<line class="axisline" x1="${padL}" x2="${width-padR}" y1="${height-padB}" y2="${height-padB}"></line>`;
 
+    // rounded-top column path: square at the baseline, per mark spec
+    function barPath(xLeft, yTop, w, yBase){
+      const r = Math.max(0, Math.min(4, w/2, yBase-yTop));
+      const xRight = xLeft+w;
+      if(r===0) return `M${xLeft},${yBase} L${xLeft},${yTop} L${xRight},${yTop} L${xRight},${yBase} Z`;
+      return `M${xLeft},${yBase} L${xLeft},${yTop+r} Q${xLeft},${yTop} ${xLeft+r},${yTop} L${xRight-r},${yTop} Q${xRight},${yTop} ${xRight},${yTop+r} L${xRight},${yBase} Z`;
+    }
+
     let seriesSvg = '';
     series.forEach(s => {
+      if(opts.bars){
+        const slot = n<=1 ? (width-padL-padR) : (width-padL-padR)/(n-1);
+        const barW = Math.max(2, Math.min(24, slot-2));
+        const yBase = y(Math.max(minY,0));
+        for(let i=0;i<n;i++){
+          const p = s.points[i];
+          if(p.value==null) continue;
+          const xLeft = x(i) - barW/2;
+          const yTop = y(p.value);
+          seriesSvg += `<path d="${barPath(xLeft, yTop, barW, yBase)}" fill="${s.color}"></path>`;
+        }
+        return;
+      }
+      if(opts.scatter){
+        for(let i=0;i<n;i++){
+          const p = s.points[i];
+          if(p.value==null) continue;
+          seriesSvg += `<circle cx="${x(i).toFixed(1)}" cy="${y(p.value).toFixed(1)}" r="3.5" fill="${s.color}"></circle>`;
+        }
+        return;
+      }
       let d = '', pen = false;
       for(let i=0;i<n;i++){
         const p = s.points[i];
@@ -417,7 +547,7 @@
       let rows = '';
       series.forEach(s => {
         const v = s.points[idx].value;
-        rows += `<div class="t-row"><span class="t-key" style="background:${s.color}"></span>${series.length>1?escapeHtml(s.name):''}<span class="t-val">${(s.format||fmtCompact)(v)}</span></div>`;
+        rows += `<div class="t-row"><span class="t-key" style="background:${s.color}"></span>${escapeHtml(s.name)}<span class="t-val">${(s.format||fmtCompact)(v)}</span></div>`;
       });
       tip.innerHTML = `<div class="t-date">${fmtDateLong(dates[idx])}</div>${rows}`;
       tip.style.left = (ev.clientX + 14) + 'px';
@@ -445,7 +575,7 @@
     for(let i=n-1;i>=0;i--){
       tbody += '<tr><td>'+fmtDateLong(dates[i])+'</td>' + series.map(s=>`<td class="num">${(s.format||fmtCompact)(s.points[i].value)}</td>`).join('') + '</tr>';
     }
-    table.innerHTML = `<table class="data-table">${thead}${tbody}</table>`;
+    table.innerHTML = `<table class="data-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
     container.appendChild(table);
 
     const toggle = document.createElement('button');
@@ -470,6 +600,44 @@
   }
 
   // ---------- top content table ----------
+  const TYPE_LABEL = {
+    FEED_IMAGE:'Imagen', FEED_CAROUSEL_ALBUM:'Carrusel', REEL:'Reel', VIDEO:'Video',
+    IMAGE:'Imagen', POLL:'Encuesta', ARTICLE:'Artículo', DOCUMENT:'Documento',
+    TEXT:'Texto', MULTIIMAGE:'Álbum',
+  };
+  function postLabel(r, network){
+    if(r.title && r.title.trim()) return r.title.trim();
+    if(r.content && r.content.trim()) return r.content.trim().slice(0,80);
+    const kind = TYPE_LABEL[r.type] || (network==='linkedin'?'Publicación':network==='youtube'?'Video':'Publicación');
+    return `${kind} · ${fmtDateLong(r.date)}`;
+  }
+  function postEngagement(r, network){
+    if(network==='instagram') return r.reach ? (r.interactions||0)/r.reach*100 : null;
+    if(network==='linkedin') return r.impressions ? ((r.likes||0)+(r.comments||0)+(r.shares||0))/r.impressions*100 : null;
+    return r.views ? ((r.likes||0)+(r.comments||0))/r.views*100 : null;
+  }
+  function renderDemographicsSection(container, network){
+    const demo = DATA.demographics && DATA.demographics[network];
+    if(!demo) return;
+    const specs = network==='linkedin'
+      ? [['seniority','Antigüedad laboral','Distribución de seguidores por nivel de experiencia.'],
+         ['industry','Industria','Distribución de seguidores por rubro.']]
+      : [['age','Edad','Distribución de la audiencia por rango etario.'],
+         ['gender','Género','Distribución de la audiencia por género.'],
+         ['country','País','Principales países de la audiencia.']];
+    const grid = document.createElement('div'); grid.className = 'demo-grid';
+    specs.forEach(spec => {
+      const items = demo[spec[0]];
+      if(!items || !items.length) return;
+      const card = chartCard(spec[1], spec[2]);
+      renderDonutChart(card, items);
+      grid.appendChild(card);
+    });
+    if(!grid.children.length) return;
+    container.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:4px 0 10px">Audiencia</h3>');
+    container.appendChild(grid);
+  }
+
   function topContentTable(container, network, range){
     const rows = DATA.topContent[network].filter(r => r.date >= range.from && r.date <= range.to);
     const card = document.createElement('div');
@@ -479,35 +647,78 @@
       container.appendChild(card);
       return;
     }
-    let cols, sortKey;
+    let cols, defaultKey;
     if(network==='instagram'){
-      cols = [['Fecha','date'],['Tipo','type'],['Alcance','reach'],['Interacciones','interactions'],['Likes','likes'],['Comentarios','comments'],['Guardados','saved']];
-      sortKey = 'interactions';
+      cols = [['Fecha','date'],['Publicación','title'],['Alcance','reach'],['Interacciones','interactions'],['Engagement','engagement'],['Likes','likes'],['Comentarios','comments'],['Guardados','saved']];
+      defaultKey = 'interactions';
     } else if(network==='linkedin'){
-      cols = [['Fecha','date'],['Tipo','type'],['Impresiones','impressions'],['Reacciones','likes'],['Comentarios','comments'],['Compartidos','shares']];
-      sortKey = 'impressions';
+      cols = [['Fecha','date'],['Publicación','title'],['Impresiones','impressions'],['Reacciones','likes'],['Comentarios','comments'],['Compartidos','shares'],['Engagement','engagement']];
+      defaultKey = 'impressions';
     } else {
-      cols = [['Fecha','date'],['Título','title'],['Vistas','views'],['Min. vistos','watchMinutes'],['Likes','likes'],['Comentarios','comments']];
-      sortKey = 'views';
+      cols = [['Fecha','date'],['Título','title'],['Vistas','views'],['Min. vistos','watchMinutes'],['Likes','likes'],['Comentarios','comments'],['Engagement','engagement']];
+      defaultKey = 'views';
     }
-    const sorted = rows.slice().sort((a,b)=>(b[sortKey]||0)-(a[sortKey]||0)).slice(0,8);
-    let thead = '<tr>' + cols.map(c=>`<th${c[1]!=='date'&&c[1]!=='type'&&c[1]!=='title'?' class="num"':''}>${c[0]}</th>`).join('') + '</tr>';
-    let tbody = sorted.map(r => {
-      return '<tr>' + cols.map(c=>{
-        const key = c[1];
-        if(key==='date') return `<td>${fmtDateShort(r.date)}</td>`;
-        if(key==='type') return `<td>${escapeHtml(r.type||'—')}</td>`;
-        if(key==='title'){
-          const label = r.title && r.title.trim() ? r.title : (r.content ? r.content.slice(0,80) : 'Ver publicación');
-          return `<td class="content-cell"><a href="${r.watchUrl||r.url}" target="_blank" rel="noopener">${escapeHtml(label)}</a></td>`;
+    const baseRows = rows.slice().sort((a,b)=>(b[defaultKey]||0)-(a[defaultKey]||0)).slice(0,8);
+    const sortState = { key: defaultKey, dir: 'desc' };
+
+    function cellValue(r, key){
+      if(key==='engagement') return postEngagement(r, network);
+      return r[key];
+    }
+    function cellHtml(r, key){
+      if(key==='date') return `<td>${fmtDateShort(r.date)}</td>`;
+      if(key==='title'){
+        const label = postLabel(r, network);
+        const href = r.watchUrl || r.url;
+        return href ? `<td class="content-cell"><a href="${href}" target="_blank" rel="noopener">${escapeHtml(label)}</a></td>` : `<td class="content-cell">${escapeHtml(label)}</td>`;
+      }
+      if(key==='engagement') return `<td class="num">${fmtPct(postEngagement(r, network))}</td>`;
+      return `<td class="num">${fmtCompact(r[key])}</td>`;
+    }
+    function sortedRows(){
+      return baseRows.slice().sort((a,b)=>{
+        if(sortState.key==='date'){
+          return sortState.dir==='asc' ? (a.date<b.date?-1:a.date>b.date?1:0) : (a.date<b.date?1:a.date>b.date?-1:0);
         }
-        if(key==='watchMinutes') return `<td class="num">${fmtCompact(r[key])}</td>`;
-        return `<td class="num">${fmtCompact(r[key])}</td>`;
+        const av = cellValue(a, sortState.key), bv = cellValue(b, sortState.key);
+        const an = (av==null||Number.isNaN(av)) ? -Infinity : av, bn = (bv==null||Number.isNaN(bv)) ? -Infinity : bv;
+        return sortState.dir==='asc' ? an-bn : bn-an;
+      });
+    }
+    function renderTbody(){
+      return sortedRows().map(r => '<tr>' + cols.map(c => cellHtml(r, c[1])).join('') + '</tr>').join('');
+    }
+    function headerLabel(c){
+      const arrow = sortState.key===c[1] ? (sortState.dir==='asc' ? ' ▲' : ' ▼') : '';
+      return escapeHtml(c[0]) + arrow;
+    }
+    function renderThead(){
+      return '<tr>' + cols.map(c => {
+        const sortable = c[1] !== 'title';
+        const cls = [c[1]!=='date'&&c[1]!=='title' ? 'num' : '', sortable ? 'sortable' : ''].filter(Boolean).join(' ');
+        return `<th${cls?` class="${cls}"`:''}${sortable?` data-key="${c[1]}"`:''}>${headerLabel(c)}</th>`;
       }).join('') + '</tr>';
-    }).join('');
-    card.innerHTML = `<h3>Publicaciones destacadas</h3><div class="cap">Top 8 del período por ${cols.find(c=>c[1]===sortKey)[0].toLowerCase()}</div>
-      <div class="table-scroll"><table class="data-table">${thead}${tbody}</table></div>`;
+    }
+
+    card.innerHTML = `<h3>Publicaciones destacadas</h3><div class="cap">Top 8 del período por ${cols.find(c=>c[1]===defaultKey)[0].toLowerCase()} · hacé clic en una columna para ordenar</div>
+      <div class="table-scroll"><table class="data-table"><thead>${renderThead()}</thead><tbody>${renderTbody()}</tbody></table></div>`;
     container.appendChild(card);
+
+    const thead = card.querySelector('thead');
+    const tbody = card.querySelector('tbody');
+    function wireHeaders(){
+      thead.querySelectorAll('th[data-key]').forEach(th => {
+        th.addEventListener('click', () => {
+          const key = th.getAttribute('data-key');
+          if(sortState.key === key) sortState.dir = sortState.dir==='asc' ? 'desc' : 'asc';
+          else { sortState.key = key; sortState.dir = 'desc'; }
+          thead.innerHTML = renderThead();
+          tbody.innerHTML = renderTbody();
+          wireHeaders();
+        });
+      });
+    }
+    wireHeaders();
   }
 
   // ---------- overview tab ----------
@@ -551,6 +762,31 @@
     grid.appendChild(statTile('Cadencia de publicación', cadence.toFixed(1)+'/sem', null));
     content.appendChild(grid);
 
+    // cross-network comparison (each metric its own scale — never mixed)
+    const cmpCards = document.createElement('div'); cmpCards.className = 'cards cols-3';
+    const cmpAudience = chartCard('Audiencia por red', 'Seguidores / suscriptores al cierre del período.');
+    renderMiniBars(cmpAudience, [
+      { label:'Instagram', value: igFollowers||0, color:'var(--series-ig)' },
+      { label:'LinkedIn', value: liFollowers||0, color:'var(--series-li)' },
+      { label:'YouTube', value: ytSubs||0, color:'var(--series-yt)' },
+    ].sort((a,b)=>b.value-a.value));
+    cmpCards.appendChild(cmpAudience);
+    const cmpInter = chartCard('Interacciones por red', 'Suma del período seleccionado.');
+    renderMiniBars(cmpInter, [
+      { label:'Instagram', value: igInter, color:'var(--series-ig)' },
+      { label:'LinkedIn', value: liInter, color:'var(--series-li)' },
+      { label:'YouTube', value: ytInter, color:'var(--series-yt)' },
+    ].sort((a,b)=>b.value-a.value));
+    cmpCards.appendChild(cmpInter);
+    const cmpPosts = chartCard('Publicaciones por red', 'Suma del período seleccionado.');
+    renderMiniBars(cmpPosts, [
+      { label:'Instagram', value: igPosts, color:'var(--series-ig)' },
+      { label:'LinkedIn', value: liPosts, color:'var(--series-li)' },
+      { label:'YouTube', value: ytVideos, color:'var(--series-yt)' },
+    ].sort((a,b)=>b.value-a.value));
+    cmpCards.appendChild(cmpPosts);
+    content.appendChild(cmpCards);
+
     // indexed growth chart
     const card = chartCard('Crecimiento de audiencia (indexado a 100 al inicio del período)', 'Compara el ritmo de crecimiento entre redes, independientemente de su tamaño.');
     const mkIdx = (rows, key) => {
@@ -580,13 +816,16 @@
     hlSpecs.forEach(spec => {
       const post = pick(spec.net, spec.metric);
       const div = document.createElement('div'); div.className='hl-card';
+      div.style.setProperty('--hl-accent', NET_COLOR[spec.net]);
       if(!post){
         div.innerHTML = `<div class="net">${NET_LABEL[spec.net]} · mejor publicación</div><div class="empty" style="padding:6px 0">Sin publicaciones en el rango.</div>`;
       } else {
-        const txt = post.title && post.title.trim() ? post.title : (post.content ? post.content : 'Ver publicación');
+        const txt = postLabel(post, spec.net);
+        const eng = postEngagement(post, spec.net);
         div.innerHTML = `<div class="net">${NET_LABEL[spec.net]} · mejor publicación (${fmtDateShort(post.date)})</div>
           <div class="txt">${escapeHtml(txt)}</div>
           <div class="stats"><span>${spec.label}: <b>${fmtCompact(post[spec.metric])}</b></span>
+          ${eng!=null?`<span>Engagement: <b>${fmtPct(eng)}</b></span>`:''}
           ${post.likes!=null?`<span>Likes: <b>${fmtCompact(post.likes)}</b></span>`:''}
           ${post.comments!=null?`<span>Comentarios: <b>${fmtCompact(post.comments)}</b></span>`:''}</div>
           <a class="go" href="${post.watchUrl||post.url}" target="_blank" rel="noopener">Ver publicación →</a>`;
@@ -605,6 +844,7 @@
     const rowsPrev = DATA.evolution[network].filter(r=>r.date>=prev.from && r.date<=prev.to);
 
     const grid = document.createElement('div'); grid.className='grid';
+    grid.style.setProperty('--tile-accent', NET_COLOR[network]);
 
     if(network==='instagram'){
       const followers = lastVal(rows,'followers'), followersPrev = lastVal(rowsPrev,'followers');
@@ -625,13 +865,14 @@
 
       const cards = document.createElement('div'); cards.className='cards';
       let c = chartCard('Seguidores', 'Evolución diaria en el rango seleccionado.');
-      renderLineChart(c, [{ name:'Seguidores', color:NET_COLOR.instagram, points: rows.map(r=>({date:r.date,value:r.followers})) }]);
+      c.classList.add('wide');
+      renderLineChart(c, [{ name:'Seguidores', color:NET_COLOR.instagram, points: rows.map(r=>({date:r.date,value:r.followers})) }], {height:300});
       cards.appendChild(c);
       c = chartCard('Alcance diario', 'Cuentas alcanzadas por día (organico + pago).');
-      renderLineChart(c, [{ name:'Alcance', color:NET_COLOR.instagram, points: rows.map(r=>({date:r.date,value:r.reach})) }]);
+      renderLineChart(c, [{ name:'Alcance', color:NET_COLOR.instagram, points: rows.map(r=>({date:r.date,value:r.reach})) }], {height:260});
       cards.appendChild(c);
       c = chartCard('Interacciones diarias', 'Likes + comentarios + guardados + compartidos (posts y reels).');
-      renderLineChart(c, [{ name:'Interacciones', color:NET_COLOR.instagram, points: rows.map(r=>({date:r.date,value:r.postsInteractions})) }]);
+      renderLineChart(c, [{ name:'Interacciones', color:NET_COLOR.instagram, points: rows.map(r=>({date:r.date,value:r.postsInteractions})) }], {height:260, bars:true});
       cards.appendChild(c);
       content.appendChild(cards);
 
@@ -643,24 +884,33 @@
       const visitors = sum(rows,'accountPageUniqueImpressions')||0, visitorsPrev = sum(rowsPrev,'accountPageUniqueImpressions')||0;
       const engRate = impressions ? inter/impressions*100 : null;
       const engRatePrev = impressionsPrev ? interPrev/impressionsPrev*100 : null;
+      const clicks = sum(rows,'accountPostClicks')||0, clicksPrev = sum(rowsPrev,'accountPostClicks')||0;
+      const ctr = impressions ? clicks/impressions*100 : null;
+      const ctrPrev = impressionsPrev ? clicksPrev/impressionsPrev*100 : null;
 
       grid.appendChild(statTile('Seguidores', fmtCompact(followers), followers-followersPrev));
       grid.appendChild(statTile('Impresiones', fmtCompact(impressions), impressions-impressionsPrev));
       grid.appendChild(statTile('Interacciones', fmtCompact(inter), inter-interPrev));
       grid.appendChild(statTile('Tasa de engagement', fmtPct(engRate), engRate!=null&&engRatePrev!=null?engRate-engRatePrev:null, {deltaIsPct:true}));
+      grid.appendChild(statTile('Clics', fmtCompact(clicks), clicks-clicksPrev));
+      grid.appendChild(statTile('CTR', fmtPct(ctr), ctr!=null&&ctrPrev!=null?ctr-ctrPrev:null, {deltaIsPct:true}));
       grid.appendChild(statTile('Publicaciones', fmtInt(posts), posts-postsPrev));
       grid.appendChild(statTile('Visitantes de página', fmtCompact(visitors), visitors-visitorsPrev));
       content.appendChild(grid);
 
       const cards = document.createElement('div'); cards.className='cards';
       let c = chartCard('Seguidores', 'Evolución diaria en el rango seleccionado.');
-      renderLineChart(c, [{ name:'Seguidores', color:NET_COLOR.linkedin, points: rows.map(r=>({date:r.date,value:r.followers})) }]);
+      c.classList.add('wide');
+      renderLineChart(c, [{ name:'Seguidores', color:NET_COLOR.linkedin, points: rows.map(r=>({date:r.date,value:r.followers})) }], {height:300});
       cards.appendChild(c);
       c = chartCard('Impresiones diarias', 'Veces que se mostraron las publicaciones de la página.');
-      renderLineChart(c, [{ name:'Impresiones', color:NET_COLOR.linkedin, points: rows.map(r=>({date:r.date,value:r.accountPostImpressions})) }]);
+      renderLineChart(c, [{ name:'Impresiones', color:NET_COLOR.linkedin, points: rows.map(r=>({date:r.date,value:r.accountPostImpressions})) }], {height:260});
       cards.appendChild(c);
       c = chartCard('Interacciones diarias', 'Reacciones + comentarios + clics.');
-      renderLineChart(c, [{ name:'Interacciones', color:NET_COLOR.linkedin, points: rows.map(r=>({date:r.date,value:r.accountPostInteractions})) }]);
+      renderLineChart(c, [{ name:'Interacciones', color:NET_COLOR.linkedin, points: rows.map(r=>({date:r.date,value:r.accountPostInteractions})) }], {height:260, bars:true});
+      cards.appendChild(c);
+      c = chartCard('CTR diario', 'Clics / impresiones de las publicaciones, por día.');
+      renderLineChart(c, [{ name:'CTR', color:NET_COLOR.linkedin, points: rows.map(r=>({date:r.date,value:(r.accountPostClicks!=null&&r.accountPostImpressions)?r.accountPostClicks/r.accountPostImpressions*100:null})), format: v => fmtPct(v) }], {height:260, startAtZero:true});
       cards.appendChild(c);
       content.appendChild(cards);
 
@@ -671,11 +921,14 @@
       const pubViews = sum(rows,'publishedVideoViews')||0, pubViewsPrev = sum(rowsPrev,'publishedVideoViews')||0;
       const likes = sum(rows,'publishedVideoLikes')||0, likesPrev = sum(rowsPrev,'publishedVideoLikes')||0;
       const comments = sum(rows,'publishedVideoComments')||0, commentsPrev = sum(rowsPrev,'publishedVideoComments')||0;
+      const engRate = pubViews ? (likes+comments)/pubViews*100 : null;
+      const engRatePrev = pubViewsPrev ? (likesPrev+commentsPrev)/pubViewsPrev*100 : null;
 
       grid.appendChild(statTile('Suscriptores', fmtCompact(subs), subs-subsPrev));
       grid.appendChild(statTile('Vistas totales', fmtCompact(views), views-viewsPrev));
       grid.appendChild(statTile('Videos publicados', fmtInt(videos), videos-videosPrev));
       grid.appendChild(statTile('Vistas (videos del período)', fmtCompact(pubViews), pubViews-pubViewsPrev));
+      grid.appendChild(statTile('Tasa de engagement', fmtPct(engRate), engRate!=null&&engRatePrev!=null?engRate-engRatePrev:null, {deltaIsPct:true}));
       grid.appendChild(statTile('Likes', fmtCompact(likes), likes-likesPrev));
       grid.appendChild(statTile('Comentarios', fmtCompact(comments), comments-commentsPrev));
       content.appendChild(grid);
@@ -687,9 +940,13 @@
       c = chartCard('Vistas diarias', 'Vistas totales del canal por día.');
       renderLineChart(c, [{ name:'Vistas', color:NET_COLOR.youtube, points: rows.map(r=>({date:r.date,value:r.videoViews})) }]);
       cards.appendChild(c);
+      c = chartCard('Interacciones diarias', 'Likes + comentarios de videos publicados en el período.');
+      renderLineChart(c, [{ name:'Interacciones', color:NET_COLOR.youtube, points: rows.map(r=>({date:r.date,value:(r.publishedVideoLikes==null&&r.publishedVideoComments==null)?null:(r.publishedVideoLikes||0)+(r.publishedVideoComments||0)})) }], {height:260, bars:true});
+      cards.appendChild(c);
       content.appendChild(cards);
     }
 
+    renderDemographicsSection(content, network);
     topContentTable(content, network, range);
   }
 
