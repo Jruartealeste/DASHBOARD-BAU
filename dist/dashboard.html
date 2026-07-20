@@ -287,22 +287,6 @@
     return Math.round((new Date(b+'T00:00:00Z') - new Date(a+'T00:00:00Z'))/86400000);
   }
   function clampMin(iso){ return iso < MIN_DATE ? MIN_DATE : iso; }
-  function mondayOf(iso){
-    const d = new Date(iso+'T00:00:00Z');
-    const day = d.getUTCDay();
-    d.setUTCDate(d.getUTCDate() + (day===0 ? -6 : 1-day));
-    return d.toISOString().slice(0,10);
-  }
-  function groupByWeek(rows, field){
-    const map = {};
-    rows.forEach(r => {
-      const v = r[field];
-      if(v==null) return;
-      const wk = mondayOf(r.date);
-      map[wk] = (map[wk]||0) + v;
-    });
-    return Object.keys(map).sort().map(k => ({ date:k, value:map[k] }));
-  }
 
   const PRESETS = [
     { key:'7d', label:'7 días', from: addDays(MAX_DATE,-6) },
@@ -874,12 +858,15 @@
       const reelsViews = sum(rows,'reelsViews')||0, reelsViewsPrev = sum(rowsPrev,'reelsViews')||0;
       const engRate = reach ? inter/reach*100 : null;
       const engRatePrev = reachPrev ? interPrev/reachPrev*100 : null;
+      const cadence = posts / ((daysBetween(range.from,range.to)+1)/7);
+      const cadencePrev = postsPrev / ((daysBetween(prev.from,prev.to)+1)/7);
 
       grid.appendChild(statTile('Seguidores', fmtCompact(followers), followers-followersPrev));
       grid.appendChild(statTile('Alcance', fmtCompact(reach), reach-reachPrev));
       grid.appendChild(statTile('Interacciones', fmtCompact(inter), inter-interPrev));
       grid.appendChild(statTile('Tasa de engagement', fmtPct(engRate), engRate!=null&&engRatePrev!=null?engRate-engRatePrev:null, {deltaIsPct:true}));
       grid.appendChild(statTile('Publicaciones', fmtInt(posts), posts-postsPrev));
+      grid.appendChild(statTile('Cadencia semanal', cadence.toFixed(1)+'/sem', cadence-cadencePrev));
       grid.appendChild(statTile('Vistas de Reels', fmtCompact(reelsViews), reelsViews-reelsViewsPrev));
       content.appendChild(grid);
 
@@ -893,9 +880,6 @@
       cards.appendChild(c);
       c = chartCard('Interacciones diarias', 'Likes + comentarios + guardados + compartidos (posts y reels).');
       renderLineChart(c, [{ name:'Interacciones', color:NET_COLOR.instagram, points: rows.map(r=>({date:r.date,value:r.postsInteractions})) }], {height:260, bars:true});
-      cards.appendChild(c);
-      c = chartCard('Cadencia semanal', 'Publicaciones por semana (lunes a domingo) en el rango seleccionado.');
-      renderLineChart(c, [{ name:'Publicaciones', color:NET_COLOR.instagram, points: groupByWeek(rows,'postsCount'), format:fmtInt }], {height:240, bars:true});
       cards.appendChild(c);
       content.appendChild(cards);
 
@@ -937,6 +921,8 @@
       const clicks = sum(rows,'accountPostClicks')||0, clicksPrev = sum(rowsPrev,'accountPostClicks')||0;
       const ctr = impressions ? clicks/impressions*100 : null;
       const ctrPrev = impressionsPrev ? clicksPrev/impressionsPrev*100 : null;
+      const cadence = posts / ((daysBetween(range.from,range.to)+1)/7);
+      const cadencePrev = postsPrev / ((daysBetween(prev.from,prev.to)+1)/7);
 
       grid.appendChild(statTile('Seguidores', fmtCompact(followers), followers-followersPrev));
       grid.appendChild(statTile('Impresiones', fmtCompact(impressions), impressions-impressionsPrev));
@@ -945,6 +931,7 @@
       grid.appendChild(statTile('Clics', fmtCompact(clicks), clicks-clicksPrev));
       grid.appendChild(statTile('CTR', fmtPct(ctr), ctr!=null&&ctrPrev!=null?ctr-ctrPrev:null, {deltaIsPct:true}));
       grid.appendChild(statTile('Publicaciones', fmtInt(posts), posts-postsPrev));
+      grid.appendChild(statTile('Cadencia semanal', cadence.toFixed(1)+'/sem', cadence-cadencePrev));
       grid.appendChild(statTile('Visitantes de página', fmtCompact(visitors), visitors-visitorsPrev));
       content.appendChild(grid);
 
@@ -961,9 +948,6 @@
       cards.appendChild(c);
       c = chartCard('CTR diario', 'Clics / impresiones de las publicaciones, por día.');
       renderLineChart(c, [{ name:'CTR', color:NET_COLOR.linkedin, points: rows.map(r=>({date:r.date,value:(r.accountPostClicks!=null&&r.accountPostImpressions)?r.accountPostClicks/r.accountPostImpressions*100:null})), format: v => fmtPct(v) }], {height:260, startAtZero:true});
-      cards.appendChild(c);
-      c = chartCard('Cadencia semanal', 'Publicaciones por semana (lunes a domingo) en el rango seleccionado.');
-      renderLineChart(c, [{ name:'Publicaciones', color:NET_COLOR.linkedin, points: groupByWeek(rows,'accountPostCount'), format:fmtInt }], {height:240, bars:true});
       cards.appendChild(c);
       content.appendChild(cards);
 
