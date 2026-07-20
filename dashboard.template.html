@@ -24,6 +24,7 @@
     --shadow-sticky:  0 2px 10px rgba(11,11,11,0.07);
     --surface-2:      #f1f0ea;
     --cat-1: #2a78d6; --cat-2: #008300; --cat-3: #e87ba4; --cat-4: #eda100; --cat-5: #1baf7a; --cat-6: #898781;
+    --series-web: #eb6834;
   }
   @media (prefers-color-scheme: dark) {
     :root:where(:not([data-theme="light"])) .viz-root {
@@ -46,6 +47,7 @@
       --shadow-sticky:  0 2px 12px rgba(0,0,0,0.35);
       --surface-2:      #242422;
       --cat-1: #3987e5; --cat-2: #008300; --cat-3: #d55181; --cat-4: #c98500; --cat-5: #199e70; --cat-6: #898781;
+      --series-web: #d95926;
     }
   }
   :root[data-theme="dark"] .viz-root {
@@ -68,6 +70,7 @@
     --shadow-sticky:  0 2px 12px rgba(0,0,0,0.35);
     --surface-2:      #242422;
     --cat-1: #3987e5; --cat-2: #008300; --cat-3: #d55181; --cat-4: #c98500; --cat-5: #199e70; --cat-6: #898781;
+    --series-web: #d95926;
   }
 
   * { box-sizing: border-box; }
@@ -284,6 +287,22 @@
     return Math.round((new Date(b+'T00:00:00Z') - new Date(a+'T00:00:00Z'))/86400000);
   }
   function clampMin(iso){ return iso < MIN_DATE ? MIN_DATE : iso; }
+  function mondayOf(iso){
+    const d = new Date(iso+'T00:00:00Z');
+    const day = d.getUTCDay();
+    d.setUTCDate(d.getUTCDate() + (day===0 ? -6 : 1-day));
+    return d.toISOString().slice(0,10);
+  }
+  function groupByWeek(rows, field){
+    const map = {};
+    rows.forEach(r => {
+      const v = r[field];
+      if(v==null) return;
+      const wk = mondayOf(r.date);
+      map[wk] = (map[wk]||0) + v;
+    });
+    return Object.keys(map).sort().map(k => ({ date:k, value:map[k] }));
+  }
 
   const PRESETS = [
     { key:'7d', label:'7 días', from: addDays(MAX_DATE,-6) },
@@ -339,6 +358,7 @@
     { key:'instagram', label:'Instagram' },
     { key:'linkedin', label:'LinkedIn' },
     { key:'youtube', label:'YouTube' },
+    { key:'web', label:'Web' },
   ];
   function renderTabs(){
     const el = document.getElementById('tabs');
@@ -874,7 +894,37 @@
       c = chartCard('Interacciones diarias', 'Likes + comentarios + guardados + compartidos (posts y reels).');
       renderLineChart(c, [{ name:'Interacciones', color:NET_COLOR.instagram, points: rows.map(r=>({date:r.date,value:r.postsInteractions})) }], {height:260, bars:true});
       cards.appendChild(c);
+      c = chartCard('Cadencia semanal', 'Publicaciones por semana (lunes a domingo) en el rango seleccionado.');
+      renderLineChart(c, [{ name:'Publicaciones', color:NET_COLOR.instagram, points: groupByWeek(rows,'postsCount'), format:fmtInt }], {height:240, bars:true});
+      cards.appendChild(c);
       content.appendChild(cards);
+
+      // orgánico vs. pago (Meta Ads está conectado para esta cuenta)
+      const orgReach = sum(rows,'organicPostsReach')||0, orgReachPrev = sum(rowsPrev,'organicPostsReach')||0;
+      const paidReach = sum(rows,'paidReach')||0, paidReachPrev = sum(rowsPrev,'paidReach')||0;
+      const paidSpend = sum(rows,'paidSpend')||0, paidSpendPrev = sum(rowsPrev,'paidSpend')||0;
+      const paidClicksSum = sum(rows,'paidClicks')||0;
+      const paidImpressionsSum = sum(rows,'paidImpressions')||0;
+      const paidCtr = paidImpressionsSum ? paidClicksSum/paidImpressionsSum*100 : null;
+      const paidCtrPrev = (sum(rowsPrev,'paidImpressions')||0) ? (sum(rowsPrev,'paidClicks')||0)/(sum(rowsPrev,'paidImpressions')||0)*100 : null;
+
+      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:4px 0 10px">Orgánico vs. pago (Meta Ads)</h3>');
+      const paidGrid = document.createElement('div'); paidGrid.className='grid';
+      paidGrid.style.setProperty('--tile-accent', 'var(--series-web)');
+      paidGrid.appendChild(statTile('Alcance orgánico (posts)', fmtCompact(orgReach), orgReach-orgReachPrev));
+      paidGrid.appendChild(statTile('Alcance pago', fmtCompact(paidReach), paidReach-paidReachPrev));
+      paidGrid.appendChild(statTile('Gasto Meta Ads', fmtCompact(paidSpend), paidSpend-paidSpendPrev));
+      paidGrid.appendChild(statTile('CTR pago', fmtPct(paidCtr), paidCtr!=null&&paidCtrPrev!=null?paidCtr-paidCtrPrev:null, {deltaIsPct:true}));
+      content.appendChild(paidGrid);
+
+      const paidCards = document.createElement('div'); paidCards.className='cards';
+      let pc = chartCard('Alcance orgánico diario', 'Alcance de publicaciones (solo días con posteos, dato orgánico de Metricool).');
+      renderLineChart(pc, [{ name:'Alcance orgánico', color:NET_COLOR.instagram, points: rows.map(r=>({date:r.date,value:r.organicPostsReach})) }], {height:240, bars:true});
+      paidCards.appendChild(pc);
+      pc = chartCard('Alcance pago diario', 'Alcance de campañas de Meta Ads (Instagram + Facebook).');
+      renderLineChart(pc, [{ name:'Alcance pago', color:'var(--series-web)', points: rows.map(r=>({date:r.date,value:r.paidReach})) }], {height:240});
+      paidCards.appendChild(pc);
+      content.appendChild(paidCards);
 
     } else if(network==='linkedin'){
       const followers = lastVal(rows,'followers'), followersPrev = lastVal(rowsPrev,'followers');
@@ -911,6 +961,9 @@
       cards.appendChild(c);
       c = chartCard('CTR diario', 'Clics / impresiones de las publicaciones, por día.');
       renderLineChart(c, [{ name:'CTR', color:NET_COLOR.linkedin, points: rows.map(r=>({date:r.date,value:(r.accountPostClicks!=null&&r.accountPostImpressions)?r.accountPostClicks/r.accountPostImpressions*100:null})), format: v => fmtPct(v) }], {height:260, startAtZero:true});
+      cards.appendChild(c);
+      c = chartCard('Cadencia semanal', 'Publicaciones por semana (lunes a domingo) en el rango seleccionado.');
+      renderLineChart(c, [{ name:'Publicaciones', color:NET_COLOR.linkedin, points: groupByWeek(rows,'accountPostCount'), format:fmtInt }], {height:240, bars:true});
       cards.appendChild(c);
       content.appendChild(cards);
 
@@ -950,6 +1003,51 @@
     topContentTable(content, network, range);
   }
 
+  // ---------- web tab ----------
+  function renderWeb(){
+    const content = document.getElementById('content');
+    const range = { from: state.from, to: state.to };
+    const prev = prevPeriod();
+    const rows = (DATA.evolution.website || []).filter(inRange);
+    const rowsPrev = (DATA.evolution.website || []).filter(r=>r.date>=prev.from && r.date<=prev.to);
+
+    if(!DATA.evolution.website){
+      content.innerHTML = '<div class="empty">Sin datos de sitio web.</div>';
+      return;
+    }
+
+    const visits = sum(rows,'visits')||0, visitsPrev = sum(rowsPrev,'visits')||0;
+    const visitors = sum(rows,'visitors')||0, visitorsPrev = sum(rowsPrev,'visitors')||0;
+    const pageViews = sum(rows,'pageViews')||0, pageViewsPrev = sum(rowsPrev,'pageViews')||0;
+
+    const grid = document.createElement('div'); grid.className='grid';
+    grid.style.setProperty('--tile-accent', 'var(--series-web)');
+    grid.appendChild(statTile('Visitas', fmtCompact(visits), visits-visitsPrev));
+    grid.appendChild(statTile('Visitantes', fmtCompact(visitors), visitors-visitorsPrev));
+    grid.appendChild(statTile('Vistas de página', fmtCompact(pageViews), pageViews-pageViewsPrev));
+    content.appendChild(grid);
+
+    const cards = document.createElement('div'); cards.className='cards';
+    let c = chartCard('Visitas diarias', 'Sesiones al sitio web por día.');
+    c.classList.add('wide');
+    renderLineChart(c, [{ name:'Visitas', color:'var(--series-web)', points: rows.map(r=>({date:r.date,value:r.visits})) }], {height:280});
+    cards.appendChild(c);
+    content.appendChild(cards);
+
+    if(DATA.web){
+      const demoGrid = document.createElement('div'); demoGrid.className='demo-grid';
+      const srcCard = chartCard('Fuentes de tráfico', 'De dónde llegan las visitas al sitio, período completo (no varía con el rango de fechas).');
+      renderDonutChart(srcCard, DATA.web.sources);
+      demoGrid.appendChild(srcCard);
+
+      const pagesCard = chartCard('Páginas más vistas', 'Top 8 por vistas, período completo.');
+      const rowsHtml = DATA.web.topPages.map(p => `<tr><td class="content-cell">${escapeHtml(p.page)}</td><td class="num">${fmtCompact(p.views)}</td></tr>`).join('');
+      pagesCard.insertAdjacentHTML('beforeend', `<div class="table-scroll"><table class="data-table"><thead><tr><th>Página</th><th class="num">Vistas</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`);
+      demoGrid.appendChild(pagesCard);
+      content.appendChild(demoGrid);
+    }
+  }
+
   function renderAll(){
     renderFilterBar();
     renderTabs();
@@ -958,6 +1056,7 @@
     document.getElementById('meta-info').textContent =
       'Rango: ' + fmtDateLong(state.from) + ' – ' + fmtDateLong(state.to) + ' · generado ' + new Date(DATA.meta.generatedAt).toLocaleString('es-AR');
     if(state.tab==='overview') renderOverview();
+    else if(state.tab==='web') renderWeb();
     else renderNetwork(state.tab);
   }
 
