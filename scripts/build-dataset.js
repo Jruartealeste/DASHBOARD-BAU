@@ -40,10 +40,43 @@ function sortByDate(list) {
 const igEvolution = sortByDate(rowsToObjects(loadRaw("ig_evolution.json")));
 const liEvolution = sortByDate(rowsToObjects(loadRaw("li_evolution.json")));
 const ytEvolution = sortByDate(rowsToObjects(loadRaw("yt_evolution.json")));
+const wtEvolution = sortByDate(rowsToObjects(loadRaw("wt_evolution.json")));
 
 const igPosts = sortByDate(rowsToObjects(loadRaw("ig_posts.json"))).reverse();
 const liPosts = sortByDate(rowsToObjects(loadRaw("li_posts.json"))).reverse();
 const ytVideos = sortByDate(rowsToObjects(loadRaw("yt_videos.json"))).reverse();
+
+const metaAdsByDate = new Map(rowsToObjects(loadRaw("meta_ads.json")).map((r) => [r.date, r]));
+const organicReachByDate = new Map(rowsToObjects(loadRaw("ig_organic_reach.json")).map((r) => [r.date, r]));
+
+igEvolution.forEach((row) => {
+  const ads = metaAdsByDate.get(row.date);
+  const organic = organicReachByDate.get(row.date);
+  row.organicPostsReach = organic ? organic.postsReach : null;
+  row.paidImpressions = ads ? ads.impressions : null;
+  row.paidReach = ads ? ads.reach : null;
+  row.paidSpend = ads ? ads.spent : null;
+  row.paidClicks = ads ? ads.clicks : null;
+});
+
+function topSourcesWithOther(raw, topN = 5) {
+  const rows = raw.rows.map(([source, traffic]) => ({ label: source, value: Number(traffic) }));
+  const total = rows.reduce((s, r) => s + r.value, 0);
+  const top = rows.slice(0, topN);
+  const restSum = total - top.reduce((s, r) => s + r.value, 0);
+  const sources = top.map((r) => ({ label: r.label, pct: Number(((100 * r.value) / total).toFixed(2)) }));
+  sources.push({ label: "Otros", pct: Number(((100 * restSum) / total).toFixed(2)) });
+  return sources;
+}
+
+function topPages(raw, topN = 8) {
+  return raw.rows.slice(0, topN).map(([page, views]) => ({ page, views: Number(views) }));
+}
+
+const web = {
+  sources: topSourcesWithOther(loadRaw("wt_sources.json")),
+  topPages: topPages(loadRaw("wt_pages.json")),
+};
 
 const dataset = {
   meta: {
@@ -62,12 +95,14 @@ const dataset = {
     instagram: igEvolution,
     linkedin: liEvolution,
     youtube: ytEvolution,
+    website: wtEvolution,
   },
   topContent: {
     instagram: igPosts,
     linkedin: liPosts,
     youtube: ytVideos,
   },
+  web,
 };
 
 fs.writeFileSync(OUT_PATH, JSON.stringify(dataset));
@@ -75,4 +110,5 @@ console.log(`Wrote ${OUT_PATH}`);
 console.log(`  instagram evolution rows: ${igEvolution.length}`);
 console.log(`  linkedin evolution rows: ${liEvolution.length}`);
 console.log(`  youtube evolution rows: ${ytEvolution.length}`);
+console.log(`  website evolution rows: ${wtEvolution.length}`);
 console.log(`  instagram posts: ${igPosts.length}, linkedin posts: ${liPosts.length}, youtube videos: ${ytVideos.length}`);
