@@ -437,7 +437,15 @@
     const height = opts.height || 200;
     const width = 640;
     const padL = 50, padR = 14, padT = 14, padB = 24;
-    const dates = series[0].points.map(p=>p.date);
+    // Align all series to a shared date axis — individual series arrays may have
+    // gaps or missing trailing/leading dates when a connector has no data for a day.
+    const dateSet = new Set();
+    series.forEach(s => s.points.forEach(p => dateSet.add(p.date)));
+    const dates = Array.from(dateSet).sort();
+    series = series.map(s => {
+      const byDate = new Map(s.points.map(p => [p.date, p.value]));
+      return Object.assign({}, s, { points: dates.map(d => ({ date: d, value: byDate.has(d) ? byDate.get(d) : null })) });
+    });
     const n = dates.length;
     let minY = Infinity, maxY = -Infinity;
     series.forEach(s => s.points.forEach(p => { if(p.value!=null){ if(p.value<minY) minY=p.value; if(p.value>maxY) maxY=p.value; } }));
