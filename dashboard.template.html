@@ -25,6 +25,7 @@
     --surface-2:      #f1f0ea;
     --cat-1: #2a78d6; --cat-2: #008300; --cat-3: #e87ba4; --cat-4: #eda100; --cat-5: #1baf7a; --cat-6: #898781;
     --series-web: #eb6834;
+    --series-gads: #7c5cd6;
   }
   @media (prefers-color-scheme: dark) {
     :root:where(:not([data-theme="light"])) .viz-root {
@@ -48,6 +49,7 @@
       --surface-2:      #242422;
       --cat-1: #3987e5; --cat-2: #008300; --cat-3: #d55181; --cat-4: #c98500; --cat-5: #199e70; --cat-6: #898781;
       --series-web: #d95926;
+      --series-gads: #a48ae8;
     }
   }
   :root[data-theme="dark"] .viz-root {
@@ -71,6 +73,7 @@
     --surface-2:      #242422;
     --cat-1: #3987e5; --cat-2: #008300; --cat-3: #d55181; --cat-4: #c98500; --cat-5: #199e70; --cat-6: #898781;
     --series-web: #d95926;
+    --series-gads: #a48ae8;
   }
 
   * { box-sizing: border-box; }
@@ -1038,6 +1041,31 @@
       demoGrid.appendChild(pagesCard);
       content.appendChild(demoGrid);
     }
+
+    if(DATA.evolution.googleAds && DATA.evolution.googleAds.length){
+      const gaRows = DATA.evolution.googleAds.filter(inRange);
+      const gaRowsPrev = DATA.evolution.googleAds.filter(r=>r.date>=prev.from && r.date<=prev.to);
+      const gaImpressions = sum(gaRows,'impressions')||0, gaImpressionsPrev = sum(gaRowsPrev,'impressions')||0;
+      const gaSpend = sum(gaRows,'spent')||0, gaSpendPrev = sum(gaRowsPrev,'spent')||0;
+      const gaClicks = sum(gaRows,'clicks')||0, gaClicksPrev = sum(gaRowsPrev,'clicks')||0;
+
+      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:20px 0 10px">Google Ads</h3>');
+      const gaGrid = document.createElement('div'); gaGrid.className='grid';
+      gaGrid.style.setProperty('--tile-accent', 'var(--series-gads)');
+      gaGrid.appendChild(statTile('Impresiones', fmtCompact(gaImpressions), gaImpressions-gaImpressionsPrev));
+      gaGrid.appendChild(statTile('Inversión', fmtCompact(gaSpend), gaSpend-gaSpendPrev));
+      gaGrid.appendChild(statTile('Clics', fmtCompact(gaClicks), gaClicks-gaClicksPrev));
+      content.appendChild(gaGrid);
+
+      const gaCards = document.createElement('div'); gaCards.className='cards';
+      let gc = chartCard('Impresiones diarias (Google Ads)', 'Veces que se mostraron los anuncios de búsqueda/display.');
+      renderLineChart(gc, [{ name:'Impresiones', color:'var(--series-gads)', points: gaRows.map(r=>({date:r.date,value:r.impressions})) }], {height:240});
+      gaCards.appendChild(gc);
+      gc = chartCard('Inversión diaria (Google Ads)', 'Gasto en campañas de Google Ads por día.');
+      renderLineChart(gc, [{ name:'Inversión', color:'var(--series-gads)', points: gaRows.map(r=>({date:r.date,value:r.spent})), format: v => v==null?'—':'$'+fmtCompact(v) }], {height:240, bars:true});
+      gaCards.appendChild(gc);
+      content.appendChild(gaCards);
+    }
   }
 
   function renderAll(){
@@ -1046,7 +1074,7 @@
     const content = document.getElementById('content');
     content.innerHTML = '';
     document.getElementById('meta-info').textContent =
-      'Rango: ' + fmtDateLong(state.from) + ' – ' + fmtDateLong(state.to) + ' · generado ' + new Date(DATA.meta.generatedAt).toLocaleString('es-AR');
+      'Rango: ' + fmtDateLong(state.from) + ' – ' + fmtDateLong(state.to) + ' · Última actualización: ' + new Date(DATA.meta.generatedAt).toLocaleString('es-AR');
     if(state.tab==='overview') renderOverview();
     else if(state.tab==='web') renderWeb();
     else renderNetwork(state.tab);

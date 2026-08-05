@@ -41,6 +41,7 @@ const igEvolution = sortByDate(rowsToObjects(loadRaw("ig_evolution.json")));
 const liEvolution = sortByDate(rowsToObjects(loadRaw("li_evolution.json")));
 const ytEvolution = sortByDate(rowsToObjects(loadRaw("yt_evolution.json")));
 const wtEvolution = sortByDate(rowsToObjects(loadRaw("wt_evolution.json")));
+const gaEvolution = sortByDate(rowsToObjects(loadRaw("google_ads.json")));
 
 const igPosts = sortByDate(rowsToObjects(loadRaw("ig_posts.json"))).reverse();
 const liPosts = sortByDate(rowsToObjects(loadRaw("li_posts.json"))).reverse();
@@ -96,6 +97,7 @@ const dataset = {
     linkedin: liEvolution,
     youtube: ytEvolution,
     website: wtEvolution,
+    googleAds: gaEvolution,
   },
   topContent: {
     instagram: igPosts,
@@ -111,4 +113,5 @@ console.log(`  instagram evolution rows: ${igEvolution.length}`);
 console.log(`  linkedin evolution rows: ${liEvolution.length}`);
 console.log(`  youtube evolution rows: ${ytEvolution.length}`);
 console.log(`  website evolution rows: ${wtEvolution.length}`);
+console.log(`  google ads evolution rows: ${gaEvolution.length}`);
 console.log(`  instagram posts: ${igPosts.length}, linkedin posts: ${liPosts.length}, youtube videos: ${ytVideos.length}`);
