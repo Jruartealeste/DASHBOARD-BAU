@@ -79,6 +79,61 @@ const web = {
   topPages: topPages(loadRaw("wt_pages.json")),
 };
 
+// Google Ads / Meta Ads campaign & keyword breakdowns (Metricool "campaigns"/
+// "keyworks" connectors — not the daily "evolution" connector above). These are
+// full-history snapshots, not tied to a date range, so they're plain field/row
+// tables rather than the date-indexed shape used for evolution data.
+function rawToRows(raw) {
+  const { fields, rows } = raw;
+  return rows.map((row) => {
+    const obj = {};
+    fields.forEach((field, i) => {
+      obj[field] = row[i];
+    });
+    return obj;
+  });
+}
+
+const googleAdsCampaigns = rawToRows(loadRaw("google_ads_campaigns.json"));
+const googleAdsKeywords = rawToRows(loadRaw("google_ads_keywords.json"));
+const metaAdsCampaigns = rawToRows(loadRaw("meta_ads_campaigns.json"));
+
+const ads = {
+  googleCampaigns: googleAdsCampaigns,
+  googleKeywords: googleAdsKeywords,
+  metaCampaigns: metaAdsCampaigns,
+};
+
+// Google Analytics 4 (Data API, scripts/fetch-ga4.js) — a fixed trailing
+// window (not tied to the dashboard's date-range picker), so rows are coerced
+// numeric-where-possible but otherwise left as plain field/row tables like ads.
+function ga4RowsToObjects(raw) {
+  const { fields, rows } = raw;
+  return rows.map((row) => {
+    const obj = {};
+    fields.forEach((field, i) => {
+      const value = row[i];
+      if (field === "date") {
+        obj[field] = toISODate(value);
+        return;
+      }
+      const n = Number(value);
+      obj[field] = value !== "" && !Number.isNaN(n) ? n : value;
+    });
+    return obj;
+  });
+}
+
+const analytics = {
+  channels: ga4RowsToObjects(loadRaw("ga4_channels.json")),
+  sourceComparison: ga4RowsToObjects(loadRaw("ga4_source_comparison.json")),
+  campaigns: ga4RowsToObjects(loadRaw("ga4_campaigns.json")),
+  landingPages: ga4RowsToObjects(loadRaw("ga4_landing_pages.json")),
+  engagementDaily: sortByDate(ga4RowsToObjects(loadRaw("ga4_engagement_daily.json"))),
+  events: ga4RowsToObjects(loadRaw("ga4_events.json")),
+  bounceByPageDevice: ga4RowsToObjects(loadRaw("ga4_bounce_by_page_device.json")),
+};
+
 const dataset = {
   meta: {
     brand: "Aluar",
@@ -105,6 +160,8 @@ const dataset = {
     youtube: ytVideos,
   },
   web,
+  ads,
+  analytics,
 };
 
 fs.writeFileSync(OUT_PATH, JSON.stringify(dataset));
@@ -115,3 +172,6 @@ console.log(`  youtube evolution rows: ${ytEvolution.length}`);
 console.log(`  website evolution rows: ${wtEvolution.length}`);
 console.log(`  google ads evolution rows: ${gaEvolution.length}`);
 console.log(`  instagram posts: ${igPosts.length}, linkedin posts: ${liPosts.length}, youtube videos: ${ytVideos.length}`);
+console.log(`  google ads campaigns: ${googleAdsCampaigns.length}, keywords: ${googleAdsKeywords.length}`);
+console.log(`  meta ads campaigns: ${metaAdsCampaigns.length}`);
+console.log(`  ga4 channels: ${analytics.channels.length}, campaigns: ${analytics.campaigns.length}, landing pages: ${analytics.landingPages.length}, events: ${analytics.events.length}`);

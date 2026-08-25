@@ -1,0 +1,6 @@
+{"fields":["name","objective","buyingType","start","stop","reach","impressions","spent","clicks","results","resultsLabel"],"rows":[
+["PMKT - AO - ARG - Seguidores de IG - PO General","OUTCOME_TRAFFIC","AUCTION","20250606","20260901",751033,2056312,2629350.9199999995,32254,null,""],
+["PMKT - AO - ARG - Alcance - Remarketing","OUTCOME_AWARENESS","AUCTION","20240813","20260901",867020,3366389,889539.869999999,3383,null,""],
+["PMKT - AO - ARG - Tráfico - PO General","OUTCOME_TRAFFIC","AUCTION","20240812","20260901",1695848,3227370,2032405.9900000002,87336,61753,"Link click"],
+["PMKT - AO - ARG - Alcance - PO General","OUTCOME_AWARENESS","AUCTION","20240809","20260901",2854784,11117140,2965344.880000001,19052,null,""]
+]}

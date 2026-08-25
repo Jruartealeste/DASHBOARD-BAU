@@ -1,0 +1,17 @@
+{
+  "name": "dashboard-bau",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "node scripts/build-dataset.js && node scripts/build-page.js",
+    "smoke-test": "node scripts/smoke-test.js",
+    "fetch-ga4": "node scripts/fetch-ga4.js"
+  },
+  "devDependencies": {
+    "jsdom": "^24.0.0",
+    "puppeteer-core": "^25.9.0"
+  },
+  "dependencies": {
+    "@google-analytics/data": "^7.0.0"
+  }
+}

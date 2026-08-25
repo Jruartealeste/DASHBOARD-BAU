@@ -1,1 +1,7 @@
 node_modules/
+
+# Google service account credentials (never commit)
+*.json.key
+redesaluar-*.json
+ga4-credentials.json
+.env
