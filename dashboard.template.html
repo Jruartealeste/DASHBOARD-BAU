@@ -1400,7 +1400,109 @@
       content.appendChild(cards);
     }
 
-    content.insertAdjacentHTML('beforeend', '<div class="cap" style="margin-top:16px">Todavía no incluye: tipo de coincidencia de palabras clave, palabras clave excluidas, búsquedas reales que activaron el anuncio, % de impresión de búsqueda / pérdida de visibilidad, ni públicos/ubicaciones/dispositivos/páginas de destino (Google Ads) — ni presupuesto, plataforma/ubicación o destino del anuncio (Meta Ads). Esos datos requieren conectar las APIs directas de Google Ads y Meta Marketing.</div>');
+    const gm = ads.googleManual;
+    if(gm && (gm.keywords?.length || gm.searchTerms?.length || gm.devices?.length || gm.landingPages?.length || gm.locations?.length)){
+      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:24px 0 4px">Google Ads — Datos ampliados</h3><div class="cap" style="margin-bottom:12px">Exportado manualmente desde Google Ads (no vía API) — es una foto del período consultado, se actualiza volviendo a exportar, no en vivo.</div>');
+      const gmCards = document.createElement('div'); gmCards.className='cards';
+
+      if(gm.keywords && gm.keywords.length){
+        const rows = gm.keywords.map(r => ({ keyword: r.keyword, matchType: r.matchType, clicks: r.clicks, ctr: r.ctr, cost: r.cost }));
+        const card = sortableCard('Palabras clave — tipo de coincidencia', `${rows.length} palabras clave · hacé clic en una columna para ordenar`, [
+          { label:'Palabra clave', key:'keyword', kind:'text' },
+          { label:'Tipo de coincidencia', key:'matchType', kind:'text' },
+          { label:'Clics', key:'clicks', kind:'int' },
+          { label:'CTR', key:'ctr', kind:'pct' },
+          { label:'Costo', key:'cost', kind:'money' },
+        ], rows, 'cost', { pageSizes: [10,25,50,'all'], defaultPageSize: 25 });
+        card.classList.add('wide');
+        gmCards.appendChild(card);
+      }
+
+      if(gm.searchTerms && gm.searchTerms.length){
+        const card = sortableCard('Búsquedas reales que activaron los anuncios', `${gm.searchTerms.length} búsquedas · hacé clic en una columna para ordenar`, [
+          { label:'Búsqueda', key:'searchTerm', kind:'text' },
+          { label:'Impresiones', key:'impressions', kind:'int' },
+          { label:'Clics', key:'clicks', kind:'int' },
+          { label:'Costo', key:'cost', kind:'money' },
+          { label:'Conversiones', key:'conversions', kind:'int' },
+        ], gm.searchTerms, 'impressions', { pageSizes: [10,25,50,'all'], defaultPageSize: 25 });
+        card.classList.add('wide');
+        gmCards.appendChild(card);
+      }
+
+      if(gm.devices && gm.devices.length){
+        const card = sortableCard('Dispositivos', 'Por campaña y dispositivo · hacé clic en una columna para ordenar', [
+          { label:'Dispositivo', key:'device', kind:'text' },
+          { label:'Campaña', key:'campaign', kind:'text' },
+          { label:'Impresiones', key:'impressions', kind:'int' },
+          { label:'Interacciones', key:'interactions', kind:'int' },
+          { label:'% Interacción', key:'interactionRate', kind:'pct' },
+          { label:'Costo', key:'cost', kind:'money' },
+        ], gm.devices, 'impressions');
+        card.classList.add('wide');
+        gmCards.appendChild(card);
+      }
+
+      if(gm.landingPages && gm.landingPages.length){
+        const card = sortableCard('Páginas de destino', 'Rendimiento por página de destino · hacé clic en una columna para ordenar', [
+          { label:'Página', key:'landingPage', kind:'text' },
+          { label:'Clics', key:'clicks', kind:'int' },
+          { label:'Impresiones', key:'impressions', kind:'int' },
+          { label:'CTR', key:'ctr', kind:'pct' },
+          { label:'Costo', key:'cost', kind:'money' },
+        ], gm.landingPages, 'impressions');
+        card.classList.add('wide');
+        gmCards.appendChild(card);
+      }
+
+      if(gm.locations && gm.locations.length){
+        const card = sortableCard('Ubicaciones', `${gm.locations.length} ubicación × campaña · hacé clic en una columna para ordenar`, [
+          { label:'Ubicación', key:'location', kind:'text' },
+          { label:'Campaña', key:'campaign', kind:'text' },
+          { label:'Clics', key:'clicks', kind:'int' },
+          { label:'Impresiones', key:'impressions', kind:'int' },
+          { label:'CTR', key:'ctr', kind:'pct' },
+          { label:'Costo', key:'cost', kind:'money' },
+          { label:'Conversiones', key:'conversions', kind:'int' },
+        ], gm.locations, 'impressions', { pageSizes: [10,25,50,'all'], defaultPageSize: 25 });
+        card.classList.add('wide');
+        gmCards.appendChild(card);
+      }
+
+      content.appendChild(gmCards);
+    }
+
+    const mm = ads.metaManual;
+    if(mm && mm.campaigns?.length){
+      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:24px 0 4px">Meta Ads — Datos ampliados</h3><div class="cap" style="margin-bottom:12px">Exportado manualmente desde Meta Ads Manager (no vía API) — es una foto del período consultado, se actualiza volviendo a exportar, no en vivo. "Presupuesto" muestra texto en vez de un número porque esta cuenta define el presupuesto a nivel de conjunto de anuncios, no de campaña — para un número real habría que exportar a nivel Conjuntos de anuncios.</div>');
+      const mmCards = document.createElement('div'); mmCards.className='cards';
+      const rows = mm.campaigns.map(r => ({
+        name: r.name, objective: r.objective, resultIndicator: r.resultIndicator, results: r.results,
+        reach: r.reach, frequency: r.frequency, costPerResult: r.costPerResult, budgetInfo: r.budgetInfo,
+        amountSpent: r.amountSpent, impressions: r.impressions, linkClicks: r.linkClicks, allClicks: r.allClicks,
+        landingPageViews: r.landingPageViews,
+      }));
+      const card = sortableCard('Campañas — detalle', 'Objetivo, resultados, alcance, frecuencia, presupuesto y clics por campaña · hacé clic en una columna para ordenar', [
+        { label:'Campaña', key:'name', kind:'text' },
+        { label:'Objetivo', key:'objective', kind:'text' },
+        { label:'Indicador de resultado', key:'resultIndicator', kind:'text' },
+        { label:'Resultados', key:'results', kind:'int' },
+        { label:'Alcance', key:'reach', kind:'int' },
+        { label:'Frecuencia', key:'frequency', kind:'pct' },
+        { label:'Costo por resultado', key:'costPerResult', kind:'money' },
+        { label:'Presupuesto', key:'budgetInfo', kind:'text' },
+        { label:'Gasto', key:'amountSpent', kind:'money' },
+        { label:'Impresiones', key:'impressions', kind:'int' },
+        { label:'Clics en el enlace', key:'linkClicks', kind:'int' },
+        { label:'Clics (todos)', key:'allClicks', kind:'int' },
+        { label:'Visitas a landing', key:'landingPageViews', kind:'int' },
+      ], rows, 'amountSpent');
+      card.classList.add('wide');
+      mmCards.appendChild(card);
+      content.appendChild(mmCards);
+    }
+
+    content.insertAdjacentHTML('beforeend', '<div class="cap" style="margin-top:16px">Todavía no incluye: palabras clave excluidas, % de impresión de búsqueda / pérdida de visibilidad, ni públicos (Google Ads) — ni públicos alcanzados (edad/sexo), plataforma/ubicación, destino del anuncio, reproducciones/tiempo de visualización, ni presupuesto numérico exacto (Meta Ads, ver nota arriba). Esos datos requieren exportaciones manuales adicionales desde cada plataforma.</div>');
   }
 
   function renderAll(){

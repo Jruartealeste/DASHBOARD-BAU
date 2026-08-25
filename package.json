@@ -5,13 +5,17 @@
   "scripts": {
     "build": "node scripts/build-dataset.js && node scripts/build-page.js",
     "smoke-test": "node scripts/smoke-test.js",
-    "fetch-ga4": "node scripts/fetch-ga4.js"
+    "fetch-ga4": "node scripts/fetch-ga4.js",
+    "fetch-google-ads": "node scripts/fetch-google-ads.js",
+    "parse-google-ads-manual": "node scripts/parse-google-ads-manual.js",
+    "parse-meta-ads-manual": "node scripts/parse-meta-ads-manual.js"
   },
   "devDependencies": {
     "jsdom": "^24.0.0",
     "puppeteer-core": "^25.9.0"
   },
   "dependencies": {
-    "@google-analytics/data": "^7.0.0"
+    "@google-analytics/data": "^7.0.0",
+    "google-ads-api": "^24.1.0"
   }
 }

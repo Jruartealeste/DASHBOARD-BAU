@@ -4,4 +4,6 @@ node_modules/
 *.json.key
 redesaluar-*.json
 ga4-credentials.json
+google-ads-credentials.json
+meta-ads-credentials.json
 .env

@@ -98,10 +98,41 @@ const googleAdsCampaigns = rawToRows(loadRaw("google_ads_campaigns.json"));
 const googleAdsKeywords = rawToRows(loadRaw("google_ads_keywords.json"));
 const metaAdsCampaigns = rawToRows(loadRaw("meta_ads_campaigns.json"));
 
+// Manually exported from the Google Ads UI (see data/manual-exports/) via
+// scripts/parse-google-ads-manual.js — a periodic snapshot, not a live feed,
+// so these are optional: if they haven't been generated yet, skip quietly.
+function loadRawOptional(name) {
+  try {
+    return rawToRows(loadRaw(name));
+  } catch {
+    return [];
+  }
+}
+const googleAdsManualKeywords = loadRawOptional("google_ads_manual_keywords.json");
+const googleAdsManualSearchTerms = loadRawOptional("google_ads_manual_search_terms.json");
+const googleAdsManualDevices = loadRawOptional("google_ads_manual_devices.json");
+const googleAdsManualLandingPages = loadRawOptional("google_ads_manual_landing_pages.json");
+const googleAdsManualLocations = loadRawOptional("google_ads_manual_locations.json");
+
+// Manually exported from Meta Ads Manager (see data/manual-exports/) via
+// scripts/parse-meta-ads-manual.js — same periodic-snapshot deal as the
+// Google Ads manual exports above.
+const metaAdsManualCampaigns = loadRawOptional("meta_ads_manual_campaigns.json");
+
 const ads = {
   googleCampaigns: googleAdsCampaigns,
   googleKeywords: googleAdsKeywords,
   metaCampaigns: metaAdsCampaigns,
+  googleManual: {
+    keywords: googleAdsManualKeywords,
+    searchTerms: googleAdsManualSearchTerms,
+    devices: googleAdsManualDevices,
+    landingPages: googleAdsManualLandingPages,
+    locations: googleAdsManualLocations,
+  },
+  metaManual: {
+    campaigns: metaAdsManualCampaigns,
+  },
 };
 
 // Google Analytics 4 (Data API, scripts/fetch-ga4.js) — every report is
@@ -175,5 +206,6 @@ console.log(`  website evolution rows: ${wtEvolution.length}`);
 console.log(`  google ads evolution rows: ${gaEvolution.length}`);
 console.log(`  instagram posts: ${igPosts.length}, linkedin posts: ${liPosts.length}, youtube videos: ${ytVideos.length}`);
 console.log(`  google ads campaigns: ${googleAdsCampaigns.length}, keywords: ${googleAdsKeywords.length}`);
+console.log(`  google ads manual: keywords ${googleAdsManualKeywords.length}, search terms ${googleAdsManualSearchTerms.length}, devices ${googleAdsManualDevices.length}, landing pages ${googleAdsManualLandingPages.length}, locations ${googleAdsManualLocations.length}`);
 console.log(`  meta ads campaigns: ${metaAdsCampaigns.length}`);
 console.log(`  ga4 channels: ${analytics.channels.length}, campaigns: ${analytics.campaigns.length}, landing pages: ${analytics.landingPages.length}, events: ${analytics.events.length}`);
