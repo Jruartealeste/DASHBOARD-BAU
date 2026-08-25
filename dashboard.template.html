@@ -1070,12 +1070,16 @@
     }
   }
 
-  // ---------- generic sortable data table (used by the ads tab) ----------
+  // ---------- generic sortable data table (used by the ads/analytics tabs) ----------
   // cols: [{ label, key, kind }] where kind is 'text' | 'int' | 'money' | 'pct'
-  function sortableCard(title, caption, cols, rows, defaultKey){
+  // opts.pageSizes: e.g. [10,25,50,'all'] — adds a row-count chip control so long
+  // tables don't dump everything at once; opts.defaultPageSize picks the initial one.
+  function sortableCard(title, caption, cols, rows, defaultKey, opts){
+    opts = opts || {};
     const card = document.createElement('div');
     card.className = 'card';
     const sortState = { key: defaultKey, dir: 'desc' };
+    const pageState = { size: opts.pageSizes ? (opts.defaultPageSize || opts.pageSizes[0]) : 'all' };
 
     function cellHtml(r, col){
       const v = r[col.key];
@@ -1096,8 +1100,12 @@
         return sortState.dir==='asc' ? an-bn : bn-an;
       });
     }
+    function visibleRows(){
+      const sorted = sortedRows();
+      return pageState.size==='all' ? sorted : sorted.slice(0, pageState.size);
+    }
     function renderTbody(){
-      return sortedRows().map(r => '<tr>' + cols.map(c => cellHtml(r, c)).join('') + '</tr>').join('');
+      return visibleRows().map(r => '<tr>' + cols.map(c => cellHtml(r, c)).join('') + '</tr>').join('');
     }
     function headerLabel(c){
       const arrow = sortState.key===c.key ? (sortState.dir==='asc' ? ' ▲' : ' ▼') : '';
@@ -1109,12 +1117,22 @@
         return `<th class="${cls}" data-key="${c.key}">${headerLabel(c)}</th>`;
       }).join('') + '</tr>';
     }
+    function renderPager(){
+      if(!opts.pageSizes) return '';
+      const btns = opts.pageSizes.map(sz => {
+        const label = sz==='all' ? 'Todas' : String(sz);
+        return `<button class="chip${pageState.size===sz?' active':''}" data-size="${sz}">${label}</button>`;
+      }).join('');
+      return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:2px 0 10px">${btns}<span class="cap" style="margin:0">de ${rows.length} filas</span></div>`;
+    }
 
     card.innerHTML = `<h3>${escapeHtml(title)}</h3><div class="cap">${escapeHtml(caption||'')}</div>
+      <div class="pager">${renderPager()}</div>
       <div class="table-scroll"><table class="data-table"><thead>${renderThead()}</thead><tbody>${renderTbody()}</tbody></table></div>`;
 
     const thead = card.querySelector('thead');
     const tbody = card.querySelector('tbody');
+    const pagerEl = card.querySelector('.pager');
     function wireHeaders(){
       thead.querySelectorAll('th[data-key]').forEach(th => {
         th.addEventListener('click', () => {
@@ -1127,17 +1145,43 @@
         });
       });
     }
+    function wirePager(){
+      pagerEl.querySelectorAll('button[data-size]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const raw = btn.getAttribute('data-size');
+          pageState.size = raw==='all' ? 'all' : Number(raw);
+          pagerEl.innerHTML = renderPager();
+          tbody.innerHTML = renderTbody();
+          wirePager();
+        });
+      });
+    }
     wireHeaders();
+    wirePager();
     return card;
   }
 
   // ---------- google analytics tab ----------
-  // GA4 Data API pull (scripts/fetch-ga4.js) — a fixed trailing window from
-  // the last fetch, not tied to the dashboard's date-range picker.
+  // GA4 Data API pull (scripts/fetch-ga4.js) — every underlying row is
+  // day-granular, so it's filtered by the selected date range and
+  // re-aggregated here, same as the network/web tabs. Rates (engagement,
+  // bounce) are never summed/averaged directly — always recomputed from the
+  // summed counts (sessions, engagedSessions) after filtering, since rates
+  // aren't additive across rows.
   function fmtDuration(seconds){
     if(seconds==null||Number.isNaN(seconds)) return '—';
     const s = Math.round(seconds);
     return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+  }
+  function groupSum(rows, keys, metrics){
+    const map = new Map();
+    rows.forEach(r => {
+      const k = keys.map(f => r[f]).join('');
+      let e = map.get(k);
+      if(!e){ e = {}; keys.forEach(f => e[f] = r[f]); metrics.forEach(f => e[f] = 0); map.set(k, e); }
+      metrics.forEach(f => { e[f] += (r[f]||0); });
+    });
+    return [...map.values()];
   }
   function renderAnalytics(){
     const content = document.getElementById('content');
@@ -1146,76 +1190,93 @@
       content.innerHTML = '<div class="empty">Sin datos de Google Analytics.</div>';
       return;
     }
-    content.insertAdjacentHTML('beforeend', '<div class="cap" style="margin-bottom:12px">Google Analytics 4 (propiedad "Aluar - GA4") · ventana fija de los últimos días desde la última actualización, no varía con el rango de fechas seleccionado arriba.</div>');
+    content.insertAdjacentHTML('beforeend', '<div class="cap" style="margin-bottom:12px">Google Analytics 4 (propiedad "Aluar - GA4"), filtrado por el rango de fechas seleccionado arriba.</div>');
 
-    const totalSessions = sum(a.channels,'sessions')||0;
-    const totalUsers = sum(a.channels,'totalUsers')||0;
-    const totalConversions = sum(a.channels,'conversions')||0;
+    const prev = prevPeriod();
+    const chRows = a.channels.filter(inRange);
+    const chRowsPrev = a.channels.filter(r=>r.date>=prev.from && r.date<=prev.to);
+    const totalSessions = sum(chRows,'sessions')||0, totalSessionsPrev = sum(chRowsPrev,'sessions')||0;
+    const totalUsers = sum(chRows,'totalUsers')||0, totalUsersPrev = sum(chRowsPrev,'totalUsers')||0;
+    const totalConversions = sum(chRows,'conversions')||0, totalConversionsPrev = sum(chRowsPrev,'conversions')||0;
     const grid = document.createElement('div'); grid.className='grid';
     grid.style.setProperty('--tile-accent', 'var(--series-web)');
-    grid.appendChild(statTile('Sesiones', fmtCompact(totalSessions)));
-    grid.appendChild(statTile('Usuarios', fmtCompact(totalUsers)));
-    grid.appendChild(statTile('Conversiones', fmtCompact(totalConversions)));
+    grid.appendChild(statTile('Sesiones', fmtCompact(totalSessions), totalSessions-totalSessionsPrev));
+    grid.appendChild(statTile('Usuarios', fmtCompact(totalUsers), totalUsers-totalUsersPrev));
+    grid.appendChild(statTile('Conversiones', fmtCompact(totalConversions), totalConversions-totalConversionsPrev));
     content.appendChild(grid);
 
     const demoGrid = document.createElement('div'); demoGrid.className='demo-grid';
-    const chSorted = a.channels.slice().sort((x,y)=>y.sessions-x.sessions);
-    const chTotal = chSorted.reduce((s,r)=>s+(r.sessions||0),0) || 1;
-    const chItems = chSorted.map(r => ({ label: r.sessionDefaultChannelGroup, pct: Number((100*r.sessions/chTotal).toFixed(2)) }));
-    const chCard = chartCard('Sesiones por canal', 'Distribución del tráfico por canal de adquisición.');
+    const chAgg = groupSum(chRows, ['sessionDefaultChannelGroup'], ['sessions']).sort((x,y)=>y.sessions-x.sessions);
+    const chTotal = chAgg.reduce((s,r)=>s+(r.sessions||0),0) || 1;
+    const chItems = chAgg.map(r => ({ label: r.sessionDefaultChannelGroup, pct: Number((100*r.sessions/chTotal).toFixed(2)) }));
+    const chCard = chartCard('Sesiones por canal', 'Distribución del tráfico por canal de adquisición en el rango seleccionado.');
     renderDonutChart(chCard, chItems);
     demoGrid.appendChild(chCard);
 
-    const evCard = chartCard('Acciones y conversiones', 'Top eventos por volumen, con conversiones asociadas.');
-    const evRows = a.events.slice(0,10).map(r => `<tr><td class="content-cell">${escapeHtml(r.eventName)}</td><td class="num">${fmtCompact(r.eventCount)}</td><td class="num">${fmtCompact(r.conversions)}</td></tr>`).join('');
-    evCard.insertAdjacentHTML('beforeend', `<div class="table-scroll"><table class="data-table"><thead><tr><th>Evento</th><th class="num">Ocurrencias</th><th class="num">Conversiones</th></tr></thead><tbody>${evRows}</tbody></table></div>`);
+    const evAgg = groupSum(a.events.filter(inRange), ['eventName'], ['eventCount','conversions']).sort((x,y)=>y.eventCount-x.eventCount).slice(0,10);
+    const evCard = chartCard('Acciones y conversiones', 'Top eventos por volumen, con conversiones asociadas, en el rango seleccionado.');
+    const evRowsHtml = evAgg.map(r => `<tr><td class="content-cell">${escapeHtml(r.eventName)}</td><td class="num">${fmtCompact(r.eventCount)}</td><td class="num">${fmtCompact(r.conversions)}</td></tr>`).join('');
+    evCard.insertAdjacentHTML('beforeend', `<div class="table-scroll"><table class="data-table"><thead><tr><th>Evento</th><th class="num">Ocurrencias</th><th class="num">Conversiones</th></tr></thead><tbody>${evRowsHtml}</tbody></table></div>`);
     demoGrid.appendChild(evCard);
     content.appendChild(demoGrid);
 
-    if(a.engagementDaily && a.engagementDaily.length){
+    const dailyRows = (a.engagementDaily||[]).filter(inRange);
+    if(dailyRows.length){
       const cards = document.createElement('div'); cards.className='cards';
-      let c = chartCard('Sesiones diarias', 'Sesiones por día en la ventana consultada.');
+      let c = chartCard('Sesiones diarias', 'Sesiones por día en el rango seleccionado.');
       c.classList.add('wide');
-      renderLineChart(c, [{ name:'Sesiones', color:'var(--series-web)', points: a.engagementDaily.map(r=>({date:r.date,value:r.sessions})) }], {height:260});
+      renderLineChart(c, [{ name:'Sesiones', color:'var(--series-web)', points: dailyRows.map(r=>({date:r.date,value:r.sessions})) }], {height:260});
       cards.appendChild(c);
       c = chartCard('Interacción diaria', 'Tasa de interacción (sesiones interactivas / sesiones totales) por día.');
       c.classList.add('wide');
-      renderLineChart(c, [{ name:'Tasa de interacción', color:'var(--series-web)', points: a.engagementDaily.map(r=>({date:r.date,value:r.engagementRate*100})), format: v => v==null?'—':fmtPct(v) }], {height:260});
+      renderLineChart(c, [{ name:'Tasa de interacción', color:'var(--series-web)', points: dailyRows.map(r=>({date:r.date,value:r.engagementRate*100})), format: v => v==null?'—':fmtPct(v) }], {height:260});
       cards.appendChild(c);
       content.appendChild(cards);
     }
 
     content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:20px 0 10px">Google vs. Meta vs. otros medios</h3>');
     let cards2 = document.createElement('div'); cards2.className='cards';
-    let card = sortableCard('', 'Sesiones, usuarios, conversiones y tasa de interacción por fuente + medio de tráfico · hacé clic en una columna para ordenar', [
+    const scAgg = groupSum(a.sourceComparison.filter(inRange), ['sessionSource','sessionMedium'], ['sessions','totalUsers','engagedSessions','conversions'])
+      .map(r => ({ ...r, engagementRatePct: r.sessions ? 100*r.engagedSessions/r.sessions : null }));
+    let card = sortableCard('', 'Sesiones, usuarios, conversiones y tasa de interacción por fuente + medio de tráfico, en el rango seleccionado · hacé clic en una columna para ordenar', [
       { label:'Fuente', key:'sessionSource', kind:'text' },
       { label:'Medio', key:'sessionMedium', kind:'text' },
       { label:'Sesiones', key:'sessions', kind:'int' },
       { label:'Usuarios', key:'totalUsers', kind:'int' },
       { label:'Conversiones', key:'conversions', kind:'int' },
       { label:'Tasa de interacción', key:'engagementRatePct', kind:'pct' },
-    ], a.sourceComparison.map(r => ({ ...r, engagementRatePct: r.engagementRate*100 })), 'sessions');
+    ], scAgg, 'sessions',
+      { pageSizes: [10,25,50,'all'], defaultPageSize: 25 });
     card.classList.add('wide');
     cards2.appendChild(card);
     content.appendChild(cards2);
 
     content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:20px 0 10px">Sesiones por campaña</h3>');
     cards2 = document.createElement('div'); cards2.className='cards';
-    card = sortableCard('', 'Sesiones, usuarios y conversiones por campaña de marketing · hacé clic en una columna para ordenar', [
+    const cpAgg = groupSum(a.campaigns.filter(inRange), ['sessionCampaignName','sessionSource','sessionMedium'], ['sessions','totalUsers','conversions']);
+    card = sortableCard('', 'Sesiones, usuarios y conversiones por campaña de marketing, en el rango seleccionado · hacé clic en una columna para ordenar', [
       { label:'Campaña', key:'sessionCampaignName', kind:'text' },
       { label:'Fuente', key:'sessionSource', kind:'text' },
       { label:'Medio', key:'sessionMedium', kind:'text' },
       { label:'Sesiones', key:'sessions', kind:'int' },
       { label:'Usuarios', key:'totalUsers', kind:'int' },
       { label:'Conversiones', key:'conversions', kind:'int' },
-    ], a.campaigns, 'sessions');
+    ], cpAgg, 'sessions',
+      { pageSizes: [10,25,50,'all'], defaultPageSize: 25 });
     card.classList.add('wide');
     cards2.appendChild(card);
     content.appendChild(cards2);
 
     content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:20px 0 10px">Rendimiento de páginas de entrada</h3>');
     cards2 = document.createElement('div'); cards2.className='cards';
-    card = sortableCard('', 'Sesiones, interacción, rebote, duración promedio y conversiones por landing page · hacé clic en una columna para ordenar', [
+    const lpAgg = groupSum(a.landingPages.filter(inRange), ['landingPage'], ['sessions','totalUsers','engagedSessions','userEngagementDuration','conversions'])
+      .map(r => ({
+        ...r,
+        engagementRatePct: r.sessions ? 100*r.engagedSessions/r.sessions : null,
+        bounceRatePct: r.sessions ? 100*(1 - r.engagedSessions/r.sessions) : null,
+        avgDuration: fmtDuration(r.sessions ? r.userEngagementDuration/r.sessions : null),
+      }));
+    card = sortableCard('', 'Sesiones, interacción, rebote, duración promedio y conversiones por landing page, en el rango seleccionado · hacé clic en una columna para ordenar', [
       { label:'Página', key:'landingPage', kind:'text' },
       { label:'Sesiones', key:'sessions', kind:'int' },
       { label:'Usuarios', key:'totalUsers', kind:'int' },
@@ -1223,24 +1284,28 @@
       { label:'Rebote', key:'bounceRatePct', kind:'pct' },
       { label:'Duración prom.', key:'avgDuration', kind:'text' },
       { label:'Conversiones', key:'conversions', kind:'int' },
-    ], a.landingPages.map(r => ({ ...r, engagementRatePct: r.engagementRate*100, bounceRatePct: r.bounceRate*100, avgDuration: fmtDuration(r.averageSessionDuration) })), 'sessions');
+    ], lpAgg, 'sessions',
+      { pageSizes: [10,25,50,'all'], defaultPageSize: 25 });
     card.classList.add('wide');
     cards2.appendChild(card);
     content.appendChild(cards2);
 
     content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:20px 0 10px">Abandono por página de entrada y dispositivo</h3>');
     cards2 = document.createElement('div'); cards2.className='cards';
-    card = sortableCard('', 'Proxy de abandono: tasa de rebote (sesión de una sola página) por página de entrada y tipo de dispositivo · hacé clic en una columna para ordenar', [
+    const bpAgg = groupSum(a.bounceByPageDevice.filter(inRange), ['landingPage','deviceCategory'], ['sessions','engagedSessions'])
+      .map(r => ({ ...r, bounceRatePct: r.sessions ? 100*(1 - r.engagedSessions/r.sessions) : null }));
+    card = sortableCard('', 'Proxy de abandono: tasa de rebote (sesión de una sola página) por página de entrada y tipo de dispositivo, en el rango seleccionado · hacé clic en una columna para ordenar', [
       { label:'Página', key:'landingPage', kind:'text' },
       { label:'Dispositivo', key:'deviceCategory', kind:'text' },
       { label:'Sesiones', key:'sessions', kind:'int' },
       { label:'Rebote', key:'bounceRatePct', kind:'pct' },
-    ], a.bounceByPageDevice.map(r => ({ ...r, bounceRatePct: r.bounceRate*100 })), 'sessions');
+    ], bpAgg, 'sessions',
+      { pageSizes: [10,25,50,'all'], defaultPageSize: 25 });
     card.classList.add('wide');
     cards2.appendChild(card);
     content.appendChild(cards2);
 
-    content.insertAdjacentHTML('beforeend', '<div class="cap" style="margin-top:16px">GA4 no expone vía API los recorridos posteriores al clic (secuencia de páginas dentro de una sesión) ni una métrica de "salidas" por página — la tabla de abandono usa la tasa de rebote como proxy más cercano. Esos datos requieren la interfaz de Explorar de GA4 o exportar a BigQuery.</div>');
+    content.insertAdjacentHTML('beforeend', '<div class="cap" style="margin-top:16px">GA4 no expone vía API los recorridos posteriores al clic (secuencia de páginas dentro de una sesión) ni una métrica de "salidas" por página — la tabla de abandono usa la tasa de rebote como proxy más cercano. Esos datos requieren la interfaz de Explorar de GA4 o exportar a BigQuery. "Usuarios" es la suma de usuarios únicos diarios del rango, no deduplicados entre días (igual convención que el resto del dashboard).</div>');
   }
 
   // ---------- ads tab ----------
@@ -1251,7 +1316,7 @@
       content.innerHTML = '<div class="empty">Sin datos de publicidad.</div>';
       return;
     }
-    content.insertAdjacentHTML('beforeend', '<div class="cap" style="margin-bottom:12px">Histórico completo de campañas (no varía con el rango de fechas seleccionado arriba).</div>');
+    content.insertAdjacentHTML('beforeend', '<div class="cap" style="margin-bottom:12px"><strong>Total acumulado desde el inicio de cada campaña</strong> (no desde el rango de fechas seleccionado arriba). El conector de campañas de Metricool solo devuelve un total agregado por campaña, sin desglose diario, así que estos números no cambian con el selector de fechas.</div>');
 
     if(ads.metaCampaigns && ads.metaCampaigns.length){
       const rows = ads.metaCampaigns.map(r => ({
@@ -1328,7 +1393,8 @@
         { label:'CTR', key:'ctr', kind:'pct' },
         { label:'Costo', key:'cost', kind:'money' },
         { label:'Conversiones', key:'conversions', kind:'int' },
-      ], rows, 'impressions');
+      ], rows, 'impressions',
+        { pageSizes: [10,25,50,'all'], defaultPageSize: 25 });
       card.classList.add('wide');
       cards.appendChild(card);
       content.appendChild(cards);

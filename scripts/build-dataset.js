@@ -104,9 +104,11 @@ const ads = {
   metaCampaigns: metaAdsCampaigns,
 };
 
-// Google Analytics 4 (Data API, scripts/fetch-ga4.js) — a fixed trailing
-// window (not tied to the dashboard's date-range picker), so rows are coerced
-// numeric-where-possible but otherwise left as plain field/row tables like ads.
+// Google Analytics 4 (Data API, scripts/fetch-ga4.js) — every report is
+// day-granular (rows are coerced numeric-where-possible), so the dashboard
+// can filter by the selected date range and re-aggregate client-side, same
+// as the evolution-based tabs. Rates aren't stored here (not additive across
+// days) — only counts; the dashboard recomputes rates after summing.
 function ga4RowsToObjects(raw) {
   const { fields, rows } = raw;
   return rows.map((row) => {
@@ -125,13 +127,13 @@ function ga4RowsToObjects(raw) {
 }
 
 const analytics = {
-  channels: ga4RowsToObjects(loadRaw("ga4_channels.json")),
-  sourceComparison: ga4RowsToObjects(loadRaw("ga4_source_comparison.json")),
-  campaigns: ga4RowsToObjects(loadRaw("ga4_campaigns.json")),
-  landingPages: ga4RowsToObjects(loadRaw("ga4_landing_pages.json")),
+  channels: sortByDate(ga4RowsToObjects(loadRaw("ga4_channels.json"))),
+  sourceComparison: sortByDate(ga4RowsToObjects(loadRaw("ga4_source_comparison.json"))),
+  campaigns: sortByDate(ga4RowsToObjects(loadRaw("ga4_campaigns.json"))),
+  landingPages: sortByDate(ga4RowsToObjects(loadRaw("ga4_landing_pages.json"))),
   engagementDaily: sortByDate(ga4RowsToObjects(loadRaw("ga4_engagement_daily.json"))),
-  events: ga4RowsToObjects(loadRaw("ga4_events.json")),
-  bounceByPageDevice: ga4RowsToObjects(loadRaw("ga4_bounce_by_page_device.json")),
+  events: sortByDate(ga4RowsToObjects(loadRaw("ga4_events.json"))),
+  bounceByPageDevice: sortByDate(ga4RowsToObjects(loadRaw("ga4_bounce_by_page_device.json"))),
 };
 
 const dataset = {
