@@ -53,13 +53,14 @@ function str(s) {
   return t === "" ? null : t;
 }
 
-function findFile(nameIncludes) {
-  const match = fs.readdirSync(SRC_DIR).find((f) => f.includes(nameIncludes));
+function findFile(nameIncludes, excludes) {
+  excludes = excludes || [];
+  const match = fs.readdirSync(SRC_DIR).find((f) => f.includes(nameIncludes) && !excludes.some((x) => f.includes(x)));
   return match ? path.join(SRC_DIR, match) : null;
 }
 
-function loadReport(nameIncludes) {
-  const filePath = findFile(nameIncludes);
+function loadReport(nameIncludes, excludes) {
+  const filePath = findFile(nameIncludes, excludes);
   if (!filePath) {
     console.log(`  (no encontrado: *${nameIncludes}* — se omite)`);
     return null;
@@ -82,7 +83,7 @@ console.log("Parseando exports manuales de Meta Ads...");
 // Advantage Campaign Budget (presupuesto a nivel campaña) — que es el caso
 // de esta cuenta hoy. Para un presupuesto numérico real hay que exportar a
 // nivel Conjuntos de anuncios en su lugar.
-const campaigns = loadReport("Campañas");
+const campaigns = loadReport("Campañas", ["PublicoAlcanzado"]);
 if (campaigns) {
   writeRaw(
     "meta_ads_manual_campaigns",
@@ -101,4 +102,47 @@ if (campaigns) {
   );
 }
 
-console.log("Listo.");
+// Audience reached: campaign export with an Age + Gender breakdown.
+const audiences = loadReport("PublicoAlcanzado");
+if (audiences) {
+  writeRaw(
+    "meta_ads_manual_audiences",
+    ["campaign", "age", "gender", "delivery", "objective", "resultIndicator", "results", "reach", "frequency", "amountSpent", "impressions", "linkClicks", "allClicks"],
+    audiences.rows.map((r) => [
+      str(r[2]), str(r[3]), str(r[4]), str(r[5]), str(r[27]), str(r[8]), num(r[7]), num(r[9]), num(r[10]),
+      num(r[14]), num(r[16]), num(r[18]), num(r[22]),
+    ])
+  );
+}
+
+// Video plays / watch time — ad-level export, no breakdown. Budget comes
+// through as a real number here (unlike the campaign-level exports above)
+// because at ad level Meta rolls up to its ad set's budget directly.
+const video = loadReport("REPRODUCCIONVIDEO");
+if (video) {
+  writeRaw(
+    "meta_ads_manual_video",
+    ["adName", "delivery", "reach", "frequency", "budget", "budgetType", "amountSpent", "impressions", "linkClicks", "allClicks", "landingPageViews", "videoPlays", "thruPlays", "avgWatchTimeSec"],
+    video.rows.map((r) => [
+      str(r[2]), str(r[3]), num(r[5]), num(r[6]), num(r[7]), str(r[8]), null, num(r[13]),
+      num(r[15]), num(r[19]), num(r[22]), num(r[24]), num(r[25]), num(r[26]),
+    ])
+  );
+}
+
+// Platforms + placements + device — ad set export with a "Ubicación"
+// breakdown (Meta bundles platform/placement/device into this one
+// breakdown). Budget is numeric here too (ad-set level).
+const placements = loadReport("UBICACION");
+if (placements) {
+  writeRaw(
+    "meta_ads_manual_placements",
+    ["adSet", "platform", "placement", "devicePlatform", "delivery", "results", "resultIndicator", "reach", "frequency", "budget", "budgetType", "amountSpent", "impressions", "linkClicks", "allClicks", "landingPageViews"],
+    placements.rows.map((r) => [
+      str(r[2]), str(r[3]), str(r[4]), str(r[5]), str(r[6]), num(r[8]), str(r[9]), num(r[10]), num(r[11]),
+      num(r[13]), str(r[14]), num(r[15]), num(r[18]), num(r[20]), num(r[24]), num(r[27]),
+    ])
+  );
+}
+
+console.log("Listo. (Nota: el export de 'destino de cada anuncio' no traía columna de destino/URL — revisar si Ads Manager la ofrece bajo otro nombre y volver a exportar.)");

@@ -118,6 +118,9 @@ const googleAdsManualLocations = loadRawOptional("google_ads_manual_locations.js
 // scripts/parse-meta-ads-manual.js — same periodic-snapshot deal as the
 // Google Ads manual exports above.
 const metaAdsManualCampaigns = loadRawOptional("meta_ads_manual_campaigns.json");
+const metaAdsManualAudiences = loadRawOptional("meta_ads_manual_audiences.json");
+const metaAdsManualVideo = loadRawOptional("meta_ads_manual_video.json");
+const metaAdsManualPlacements = loadRawOptional("meta_ads_manual_placements.json");
 
 const ads = {
   googleCampaigns: googleAdsCampaigns,
@@ -132,6 +135,9 @@ const ads = {
   },
   metaManual: {
     campaigns: metaAdsManualCampaigns,
+    audiences: metaAdsManualAudiences,
+    video: metaAdsManualVideo,
+    placements: metaAdsManualPlacements,
   },
 };
 

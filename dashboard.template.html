@@ -1502,7 +1502,58 @@
       content.appendChild(mmCards);
     }
 
-    content.insertAdjacentHTML('beforeend', '<div class="cap" style="margin-top:16px">Todavía no incluye: palabras clave excluidas, % de impresión de búsqueda / pérdida de visibilidad, ni públicos (Google Ads) — ni públicos alcanzados (edad/sexo), plataforma/ubicación, destino del anuncio, reproducciones/tiempo de visualización, ni presupuesto numérico exacto (Meta Ads, ver nota arriba). Esos datos requieren exportaciones manuales adicionales desde cada plataforma.</div>');
+    if(mm && mm.audiences?.length){
+      const cards = document.createElement('div'); cards.className='cards';
+      const card = sortableCard('Públicos alcanzados — edad y sexo', `${mm.audiences.length} filas (campaña × edad × sexo) · hacé clic en una columna para ordenar`, [
+        { label:'Campaña', key:'campaign', kind:'text' },
+        { label:'Edad', key:'age', kind:'text' },
+        { label:'Sexo', key:'gender', kind:'text' },
+        { label:'Alcance', key:'reach', kind:'int' },
+        { label:'Impresiones', key:'impressions', kind:'int' },
+        { label:'Clics en el enlace', key:'linkClicks', kind:'int' },
+      ], mm.audiences, 'reach', { pageSizes: [10,25,50,'all'], defaultPageSize: 25 });
+      card.classList.add('wide');
+      cards.appendChild(card);
+      content.appendChild(cards);
+    }
+
+    if(mm && mm.placements?.length){
+      const cards = document.createElement('div'); cards.className='cards';
+      const card = sortableCard('Plataformas y ubicaciones', `${mm.placements.length} filas (conjunto de anuncios × plataforma × ubicación × dispositivo) · presupuesto y gasto reales, a nivel conjunto de anuncios · hacé clic en una columna para ordenar`, [
+        { label:'Conjunto de anuncios', key:'adSet', kind:'text' },
+        { label:'Plataforma', key:'platform', kind:'text' },
+        { label:'Ubicación', key:'placement', kind:'text' },
+        { label:'Dispositivo', key:'devicePlatform', kind:'text' },
+        { label:'Alcance', key:'reach', kind:'int' },
+        { label:'Impresiones', key:'impressions', kind:'int' },
+        { label:'Presupuesto', key:'budget', kind:'money' },
+        { label:'Gasto', key:'amountSpent', kind:'money' },
+        { label:'Clics en el enlace', key:'linkClicks', kind:'int' },
+      ], mm.placements, 'reach', { pageSizes: [10,25,50,'all'], defaultPageSize: 25 });
+      card.classList.add('wide');
+      cards.appendChild(card);
+      content.appendChild(cards);
+    }
+
+    if(mm && mm.video?.length){
+      const rows = mm.video.map(r => ({ ...r, avgWatchTime: fmtDuration(r.avgWatchTimeSec) }));
+      const cards = document.createElement('div'); cards.className='cards';
+      const card = sortableCard('Reproducciones y tiempo de visualización', `${rows.length} anuncios · presupuesto real a nivel conjunto de anuncios · hacé clic en una columna para ordenar`, [
+        { label:'Anuncio', key:'adName', kind:'text' },
+        { label:'Estado', key:'delivery', kind:'text' },
+        { label:'Alcance', key:'reach', kind:'int' },
+        { label:'Frecuencia', key:'frequency', kind:'pct' },
+        { label:'Presupuesto', key:'budget', kind:'money' },
+        { label:'Reproducciones', key:'videoPlays', kind:'int' },
+        { label:'ThruPlays', key:'thruPlays', kind:'int' },
+        { label:'Tiempo prom.', key:'avgWatchTime', kind:'text' },
+      ], rows, 'videoPlays', { pageSizes: [10,25,50,'all'], defaultPageSize: 25 });
+      card.classList.add('wide');
+      cards.appendChild(card);
+      content.appendChild(cards);
+    }
+
+    content.insertAdjacentHTML('beforeend', '<div class="cap" style="margin-top:16px">Todavía no incluye: palabras clave excluidas, % de impresión de búsqueda / pérdida de visibilidad, ni públicos (Google Ads) — ni destino de cada anuncio (Meta Ads: el export de Ads Manager no trajo columna de URL/destino, hay que revisar si existe con otro nombre y volver a exportar). Esos datos requieren exportaciones manuales adicionales desde cada plataforma.</div>');
   }
 
   function renderAll(){
