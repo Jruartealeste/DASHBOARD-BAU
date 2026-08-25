@@ -1402,7 +1402,7 @@
 
     const gm = ads.googleManual;
     if(gm && (gm.keywords?.length || gm.searchTerms?.length || gm.devices?.length || gm.landingPages?.length || gm.locations?.length)){
-      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:24px 0 4px">Google Ads — Datos ampliados</h3><div class="cap" style="margin-bottom:12px">Exportado manualmente desde Google Ads (no vía API) — es una foto del período consultado, se actualiza volviendo a exportar, no en vivo.</div>');
+      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:24px 0 4px">Google Ads — Datos ampliados</h3><div class="cap" style="margin-bottom:12px"><strong>Datos de los últimos 12 meses</strong> (29 jul 2025 – 25 ago 2026), exportados manualmente desde Google Ads (no vía API) — es un total acumulado de ese período, no varía con el selector de fechas de arriba. Se actualiza volviendo a exportar, no en vivo.</div>');
       const gmCards = document.createElement('div'); gmCards.className='cards';
 
       if(gm.keywords && gm.keywords.length){
@@ -1474,7 +1474,7 @@
 
     const mm = ads.metaManual;
     if(mm && mm.campaigns?.length){
-      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:24px 0 4px">Meta Ads — Datos ampliados</h3><div class="cap" style="margin-bottom:12px">Exportado manualmente desde Meta Ads Manager (no vía API) — es una foto del período consultado, se actualiza volviendo a exportar, no en vivo. "Presupuesto" muestra texto en vez de un número porque esta cuenta define el presupuesto a nivel de conjunto de anuncios, no de campaña — para un número real habría que exportar a nivel Conjuntos de anuncios.</div>');
+      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:24px 0 4px">Meta Ads — Datos ampliados</h3><div class="cap" style="margin-bottom:12px"><strong>Datos de los últimos 12 meses</strong> (25 ago 2025 – 25 ago 2026), exportados manualmente desde Meta Ads Manager (no vía API) — es un total acumulado de ese período, no varía con el selector de fechas de arriba. Se actualiza volviendo a exportar, no en vivo. "Presupuesto" muestra texto en vez de un número en la tabla de campañas porque esta cuenta lo define a nivel de conjunto de anuncios, no de campaña — el número real está en la tabla "Plataformas y ubicaciones".</div>');
       const mmCards = document.createElement('div'); mmCards.className='cards';
       const rows = mm.campaigns.map(r => ({
         name: r.name, objective: r.objective, resultIndicator: r.resultIndicator, results: r.results,
