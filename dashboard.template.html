@@ -317,6 +317,20 @@
   function renderFilterBar(){
     const el = document.getElementById('filter-bar');
     el.innerHTML = '';
+    const adsTabActive = state.tab === 'ads';
+    if(adsTabActive){
+      const note = document.createElement('div');
+      note.style.cssText = 'font-size:11.5px;color:var(--danger);font-weight:700;width:100%';
+      note.textContent = '⚠ Este selector no aplica en la pestaña Publicidad — esos datos son un total fijo, no un rango.';
+      el.appendChild(note);
+    }
+    // Wrap the actual controls so dimming/disabling them (when on the Ads
+    // tab, where none of this applies) doesn't also fade the warning above.
+    const controls = document.createElement('div');
+    controls.style.cssText = 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%' +
+      (adsTabActive ? ';opacity:0.45;pointer-events:none' : '');
+    el.appendChild(controls);
+
     const grp = document.createElement('div'); grp.className = 'grp';
     PRESETS.forEach(p=>{
       const b = document.createElement('button');
@@ -325,8 +339,8 @@
       b.onclick = () => { state.preset = p.key; state.from = p.from; state.to = MAX_DATE; renderAll(); };
       grp.appendChild(b);
     });
-    el.appendChild(grp);
-    const sep = document.createElement('div'); sep.className='sep'; el.appendChild(sep);
+    controls.appendChild(grp);
+    const sep = document.createElement('div'); sep.className='sep'; controls.appendChild(sep);
 
     const custom = document.createElement('div'); custom.className='grp';
     const fromI = document.createElement('input'); fromI.type='date'; fromI.value = state.from; fromI.min = MIN_DATE; fromI.max = state.to;
@@ -336,7 +350,7 @@
     custom.appendChild(fromI);
     const dash = document.createElement('span'); dash.textContent='–'; dash.style.color='var(--text-muted)'; custom.appendChild(dash);
     custom.appendChild(toI);
-    el.appendChild(custom);
+    controls.appendChild(custom);
   }
 
   // ---------- tabs ----------
@@ -717,7 +731,8 @@
       }).join('') + '</tr>';
     }
 
-    card.innerHTML = `<h3>Publicaciones destacadas</h3><div class="cap">Top 8 del período por ${cols.find(c=>c[1]===defaultKey)[0].toLowerCase()} · hacé clic en una columna para ordenar</div>
+    const lowSample = rows.length <= 4 ? ` · ⚠ solo ${rows.length} publicación${rows.length===1?'':'es'} en el rango — "destacada" acá puede ser simplemente la única disponible, no necesariamente un buen resultado` : '';
+    card.innerHTML = `<h3>Publicaciones destacadas</h3><div class="cap">Top 8 del período por ${cols.find(c=>c[1]===defaultKey)[0].toLowerCase()}${lowSample} · hacé clic en una columna para ordenar</div>
       <div class="table-scroll"><table class="data-table"><thead>${renderThead()}</thead><tbody>${renderTbody()}</tbody></table></div>`;
     container.appendChild(card);
 
@@ -905,20 +920,20 @@
       const paidCtr = paidImpressionsSum ? paidClicksSum/paidImpressionsSum*100 : null;
       const paidCtrPrev = (sum(rowsPrev,'paidImpressions')||0) ? (sum(rowsPrev,'paidClicks')||0)/(sum(rowsPrev,'paidImpressions')||0)*100 : null;
 
-      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:4px 0 10px">Orgánico vs. pago (Meta Ads)</h3>');
+      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:4px 0 10px">Orgánico (Instagram) vs. pago (Meta Ads: Instagram + Facebook combinados)</h3><div class="cap" style="margin-bottom:10px">⚠ "Alcance pago" es una <strong>suma de alcance diario</strong>, no el alcance único (deduplicado) del período — el alcance no se puede sumar día a día sin contar dos veces a quien vio el anuncio en más de un día. El número real de alcance único hay que pedírselo puntualmente a la agencia, que sí tiene acceso directo a la API de Meta.</div>');
       const paidGrid = document.createElement('div'); paidGrid.className='grid';
       paidGrid.style.setProperty('--tile-accent', 'var(--series-web)');
-      paidGrid.appendChild(statTile('Alcance orgánico (posts)', fmtCompact(orgReach), orgReach-orgReachPrev));
-      paidGrid.appendChild(statTile('Alcance pago', fmtCompact(paidReach), paidReach-paidReachPrev));
-      paidGrid.appendChild(statTile('Gasto Meta Ads', fmtCompact(paidSpend), paidSpend-paidSpendPrev));
-      paidGrid.appendChild(statTile('CTR pago', fmtPct(paidCtr), paidCtr!=null&&paidCtrPrev!=null?paidCtr-paidCtrPrev:null, {deltaIsPct:true}));
+      paidGrid.appendChild(statTile('Alcance orgánico (posts, IG)', fmtCompact(orgReach), orgReach-orgReachPrev));
+      paidGrid.appendChild(statTile('Alcance pago (IG+FB, aprox.)', fmtCompact(paidReach), paidReach-paidReachPrev));
+      paidGrid.appendChild(statTile('Gasto Meta Ads (IG+FB)', fmtCompact(paidSpend), paidSpend-paidSpendPrev));
+      paidGrid.appendChild(statTile('CTR pago (IG+FB)', fmtPct(paidCtr), paidCtr!=null&&paidCtrPrev!=null?paidCtr-paidCtrPrev:null, {deltaIsPct:true}));
       content.appendChild(paidGrid);
 
       const paidCards = document.createElement('div'); paidCards.className='cards';
-      let pc = chartCard('Alcance orgánico diario', 'Alcance de publicaciones (solo días con posteos, dato orgánico de Metricool).');
+      let pc = chartCard('Alcance orgánico diario', 'Alcance de publicaciones de Instagram (solo días con posteos, dato orgánico de Metricool).');
       renderLineChart(pc, [{ name:'Alcance orgánico', color:NET_COLOR.instagram, points: rows.map(r=>({date:r.date,value:r.organicPostsReach})) }], {height:240, bars:true});
       paidCards.appendChild(pc);
-      pc = chartCard('Alcance pago diario', 'Alcance de campañas de Meta Ads (Instagram + Facebook).');
+      pc = chartCard('Alcance pago diario (aprox.)', 'Alcance diario de campañas de Meta Ads (Instagram + Facebook combinados) — sumar estas barras sobrestima el alcance real del período, ver nota arriba.');
       renderLineChart(pc, [{ name:'Alcance pago', color:'var(--series-web)', points: rows.map(r=>({date:r.date,value:r.paidReach})) }], {height:240});
       paidCards.appendChild(pc);
       content.appendChild(paidCards);
@@ -1183,6 +1198,14 @@
     });
     return [...map.values()];
   }
+  // Known media-outlet sources GA4 tags with medium=paid_social (so they land
+  // in the "Paid Social" channel bucket next to Meta) — auditoría de Punto
+  // Marketing, 26/08/2026. Used only to caveat the channel donut; the
+  // source+medium table below already lists each outlet as its own row.
+  const DIGITAL_MEDIA_SOURCES = ['tn','ambito','infobae','clarin','lanacion','cronista','elcronista'];
+  function normSource(s){ return String(s??'').trim().toLowerCase(); }
+  function normCampaign(s){ return String(s??'').replace(/\+/g, ' '); }
+
   function renderAnalytics(){
     const content = document.getElementById('content');
     const a = DATA.analytics;
@@ -1190,6 +1213,12 @@
       content.innerHTML = '<div class="empty">Sin datos de Google Analytics.</div>';
       return;
     }
+    // Normalizar mayúsculas ("tn" vs "TN") y el "+" en nombres de campaña
+    // (llega como separador de espacios en algunos UTM) antes de agrupar —
+    // si no, cuentan como filas distintas y se pisa el ranking real.
+    a.sourceComparison = a.sourceComparison.map(r => ({ ...r, sessionSource: normSource(r.sessionSource) }));
+    a.campaigns = a.campaigns.map(r => ({ ...r, sessionCampaignName: normCampaign(r.sessionCampaignName), sessionSource: normSource(r.sessionSource) }));
+
     content.insertAdjacentHTML('beforeend', '<div class="cap" style="margin-bottom:12px">Google Analytics 4 (propiedad "Aluar - GA4"), filtrado por el rango de fechas seleccionado arriba.</div>');
 
     const prev = prevPeriod();
@@ -1211,6 +1240,9 @@
     const chItems = chAgg.map(r => ({ label: r.sessionDefaultChannelGroup, pct: Number((100*r.sessions/chTotal).toFixed(2)) }));
     const chCard = chartCard('[GA-1] Sesiones por canal', 'Distribución del tráfico por canal de adquisición en el rango seleccionado.');
     renderDonutChart(chCard, chItems);
+    if(chItems.some(it => it.label === 'Paid Social')){
+      chCard.insertAdjacentHTML('beforeend', '<div class="cap" style="margin-top:8px">⚠ "Paid Social" acá mezcla Meta con medios digitales (TN, Ámbito, Infobae, Clarín, La Nación, El Cronista) — Analytics los agrupa juntos porque comparten el mismo "medium". Para el desglose real por fuente, ver la tabla "Google vs. Meta vs. otros medios" más abajo.</div>');
+    }
     demoGrid.appendChild(chCard);
 
     const evAgg = groupSum(a.events.filter(inRange), ['eventName'], ['eventCount','conversions']).sort((x,y)=>y.eventCount-x.eventCount).slice(0,10);
@@ -1309,6 +1341,13 @@
   }
 
   // ---------- ads tab ----------
+  // Small inline pill repeating "this table's real period" right on the
+  // header — a caption paragraph placed once at the top of the tab was easy
+  // to scroll past before reaching a number (auditoría Punto Marketing, #2).
+  function periodBadge(text){
+    return `<span style="font-family:inherit;font-size:10.5px;font-weight:700;letter-spacing:.02em;padding:2px 8px;border-radius:999px;background:var(--surface-2);color:var(--text-secondary);border:1px solid var(--border-hair);vertical-align:middle;margin-left:6px">${escapeHtml(text)}</span>`;
+  }
+
   function renderAds(){
     const content = document.getElementById('content');
     const ads = DATA.ads;
@@ -1316,7 +1355,7 @@
       content.innerHTML = '<div class="empty">Sin datos de publicidad.</div>';
       return;
     }
-    content.insertAdjacentHTML('beforeend', '<div class="cap" style="margin-bottom:12px"><strong>Total acumulado desde el inicio de cada campaña</strong> (no desde el rango de fechas seleccionado arriba). El conector de campañas de Metricool solo devuelve un total agregado por campaña, sin desglose diario, así que estos números no cambian con el selector de fechas.</div>');
+    content.insertAdjacentHTML('beforeend', '<div class="cap" style="margin-bottom:6px"><strong>Total acumulado desde el inicio de cada campaña</strong> (no desde el rango de fechas seleccionado arriba). El conector de campañas de Metricool solo devuelve un total agregado por campaña, sin desglose diario, así que estos números no cambian con el selector de fechas — el selector de arriba no aplica a nada de esta pestaña.</div><div class="cap" style="margin-bottom:12px"><strong>"Conversiones" en 0 en Google Ads:</strong> es correcto, no un error — la cuenta no tiene acciones de conversión configuradas (el sitio de Aluar es institucional, no vende ni capta leads). No lo leas como "cero resultados".</div>');
 
     if(ads.metaCampaigns && ads.metaCampaigns.length){
       const rows = ads.metaCampaigns.map(r => ({
@@ -1331,7 +1370,7 @@
       grid.appendChild(statTile('Alcance total', fmtCompact(sum(rows,'reach')||0)));
       content.appendChild(grid);
 
-      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:16px 0 10px">[Meta-1, Meta-5, Meta-7] Meta Ads — Campañas</h3>');
+      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:16px 0 10px">[Meta-1, Meta-5, Meta-7] Meta Ads — Campañas ' + periodBadge('desde inicio de campaña') + '</h3>');
       const cards = document.createElement('div'); cards.className='cards';
       const card = sortableCard('', 'Objetivo, alcance, frecuencia (impresiones/alcance), inversión, clics y resultado principal por campaña · hacé clic en una columna para ordenar', [
         { label:'Campaña', key:'name', kind:'text' },
@@ -1353,7 +1392,7 @@
       const rows = ads.googleCampaigns.map(r => ({
         name: r.name, impressions: r.impressions, clicks: r.clicks,
         ctr: r.impressions ? r.clicks/r.impressions*100 : null,
-        spent: r.spent, conversions: r.conversions,
+        spent: r.spent,
       }));
       const grid = document.createElement('div'); grid.className='grid';
       grid.style.setProperty('--tile-accent', 'var(--series-gads)');
@@ -1362,15 +1401,14 @@
       grid.appendChild(statTile('Clics totales', fmtCompact(sum(rows,'clicks')||0)));
       content.appendChild(grid);
 
-      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:16px 0 10px">[GAds-5, GAds-9] Google Ads — Campañas</h3>');
+      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:16px 0 10px">[GAds-5, GAds-9] Google Ads — Campañas ' + periodBadge('desde inicio de campaña') + '</h3>');
       const cards = document.createElement('div'); cards.className='cards';
-      const card = sortableCard('', 'Impresiones, clics, CTR, inversión y conversiones por campaña · hacé clic en una columna para ordenar', [
+      const card = sortableCard('', 'Impresiones, clics, CTR e inversión por campaña · hacé clic en una columna para ordenar (sin columna de conversiones: la cuenta no tiene acciones de conversión configuradas)', [
         { label:'Campaña', key:'name', kind:'text' },
         { label:'Impresiones', key:'impressions', kind:'int' },
         { label:'Clics', key:'clicks', kind:'int' },
         { label:'CTR', key:'ctr', kind:'pct' },
         { label:'Inversión', key:'spent', kind:'money' },
-        { label:'Conversiones', key:'conversions', kind:'int' },
       ], rows, 'spent');
       card.classList.add('wide');
       cards.appendChild(card);
@@ -1381,18 +1419,17 @@
       const rows = ads.googleKeywords.map(r => ({
         campaign: r.campaign, keyword: r.keyword, impressions: r.impressions, clicks: r.clicks,
         ctr: r.impressions ? r.clicks/r.impressions*100 : null,
-        cost: r.cost, conversions: r.conversions,
+        cost: r.cost,
       }));
-      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:16px 0 10px">[GAds-1] Google Ads — Palabras clave</h3>');
+      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:16px 0 10px">[GAds-1] Google Ads — Palabras clave ' + periodBadge('desde inicio de campaña') + '</h3>');
       const cards = document.createElement('div'); cards.className='cards';
-      const card = sortableCard('', `${rows.length} palabras clave con impresión en el período histórico · hacé clic en una columna para ordenar`, [
+      const card = sortableCard('', `${rows.length} palabras clave con impresión en el período histórico · sin columna de conversiones (no hay acciones de conversión configuradas) · hacé clic en una columna para ordenar`, [
         { label:'Campaña', key:'campaign', kind:'text' },
         { label:'Palabra clave', key:'keyword', kind:'text' },
         { label:'Impresiones', key:'impressions', kind:'int' },
         { label:'Clics', key:'clicks', kind:'int' },
         { label:'CTR', key:'ctr', kind:'pct' },
         { label:'Costo', key:'cost', kind:'money' },
-        { label:'Conversiones', key:'conversions', kind:'int' },
       ], rows, 'impressions',
         { pageSizes: [10,25,50,'all'], defaultPageSize: 25 });
       card.classList.add('wide');
@@ -1402,7 +1439,7 @@
 
     const gm = ads.googleManual;
     if(gm && (gm.keywords?.length || gm.searchTerms?.length || gm.devices?.length || gm.landingPages?.length || gm.locations?.length)){
-      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:24px 0 4px">Google Ads — Datos ampliados</h3><div class="cap" style="margin-bottom:12px"><strong>Datos de los últimos 12 meses</strong> (29 jul 2025 – 25 ago 2026), exportados manualmente desde Google Ads (no vía API) — es un total acumulado de ese período, no varía con el selector de fechas de arriba. Se actualiza volviendo a exportar, no en vivo.</div>');
+      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:24px 0 4px">Google Ads — Datos ampliados ' + periodBadge('últimos 12 meses') + '</h3><div class="cap" style="margin-bottom:12px"><strong>Datos de los últimos 12 meses</strong> (29 jul 2025 – 25 ago 2026), exportados manualmente desde Google Ads (no vía API) — es un total acumulado de ese período, no varía con el selector de fechas de arriba. Se actualiza volviendo a exportar, no en vivo.</div>');
       const gmCards = document.createElement('div'); gmCards.className='cards';
 
       if(gm.keywords && gm.keywords.length){
@@ -1419,12 +1456,11 @@
       }
 
       if(gm.searchTerms && gm.searchTerms.length){
-        const card = sortableCard('[GAds-4] Búsquedas reales que activaron los anuncios', `${gm.searchTerms.length} búsquedas · hacé clic en una columna para ordenar`, [
+        const card = sortableCard('[GAds-4] Búsquedas reales que activaron los anuncios', `${gm.searchTerms.length} búsquedas · sin columna de conversiones (no hay acciones de conversión configuradas) · hacé clic en una columna para ordenar`, [
           { label:'Búsqueda', key:'searchTerm', kind:'text' },
           { label:'Impresiones', key:'impressions', kind:'int' },
           { label:'Clics', key:'clicks', kind:'int' },
           { label:'Costo', key:'cost', kind:'money' },
-          { label:'Conversiones', key:'conversions', kind:'int' },
         ], gm.searchTerms, 'impressions', { pageSizes: [10,25,50,'all'], defaultPageSize: 25 });
         card.classList.add('wide');
         gmCards.appendChild(card);
@@ -1456,14 +1492,13 @@
       }
 
       if(gm.locations && gm.locations.length){
-        const card = sortableCard('[GAds-8b] Ubicaciones', `${gm.locations.length} ubicación × campaña · hacé clic en una columna para ordenar`, [
+        const card = sortableCard('[GAds-8b] Ubicaciones', `${gm.locations.length} ubicación × campaña · sin columna de conversiones (no hay acciones de conversión configuradas) · hacé clic en una columna para ordenar`, [
           { label:'Ubicación', key:'location', kind:'text' },
           { label:'Campaña', key:'campaign', kind:'text' },
           { label:'Clics', key:'clicks', kind:'int' },
           { label:'Impresiones', key:'impressions', kind:'int' },
           { label:'CTR', key:'ctr', kind:'pct' },
           { label:'Costo', key:'cost', kind:'money' },
-          { label:'Conversiones', key:'conversions', kind:'int' },
         ], gm.locations, 'impressions', { pageSizes: [10,25,50,'all'], defaultPageSize: 25 });
         card.classList.add('wide');
         gmCards.appendChild(card);
@@ -1474,7 +1509,7 @@
 
     const mm = ads.metaManual;
     if(mm && mm.campaigns?.length){
-      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:24px 0 4px">Meta Ads — Datos ampliados</h3><div class="cap" style="margin-bottom:12px"><strong>Datos de los últimos 12 meses</strong> (25 ago 2025 – 25 ago 2026), exportados manualmente desde Meta Ads Manager (no vía API) — es un total acumulado de ese período, no varía con el selector de fechas de arriba. Se actualiza volviendo a exportar, no en vivo. "Presupuesto" muestra texto en vez de un número en la tabla de campañas porque esta cuenta lo define a nivel de conjunto de anuncios, no de campaña — el número real está en la tabla "Plataformas y ubicaciones".</div>');
+      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:24px 0 4px">Meta Ads — Datos ampliados ' + periodBadge('últimos 12 meses') + '</h3><div class="cap" style="margin-bottom:12px"><strong>Datos de los últimos 12 meses</strong> (25 ago 2025 – 25 ago 2026), exportados manualmente desde Meta Ads Manager (no vía API) — es un total acumulado de ese período, no varía con el selector de fechas de arriba. Se actualiza volviendo a exportar, no en vivo. "Presupuesto" muestra texto en vez de un número en la tabla de campañas porque esta cuenta lo define a nivel de conjunto de anuncios, no de campaña — el número real está en la tabla "Plataformas y ubicaciones".</div>');
       const mmCards = document.createElement('div'); mmCards.className='cards';
       const rows = mm.campaigns.map(r => ({
         name: r.name, objective: r.objective, resultIndicator: r.resultIndicator, results: r.results,
@@ -1561,8 +1596,10 @@
     renderTabs();
     const content = document.getElementById('content');
     content.innerHTML = '';
-    document.getElementById('meta-info').textContent =
-      'Rango: ' + fmtDateLong(state.from) + ' – ' + fmtDateLong(state.to) + ' · Última actualización: ' + new Date(DATA.meta.generatedAt).toLocaleString('es-AR');
+    document.getElementById('meta-info').innerHTML =
+      'Rango: ' + escapeHtml(fmtDateLong(state.from)) + ' – ' + escapeHtml(fmtDateLong(state.to)) +
+      ' · <strong style="color:var(--text-primary)">Datos de redes hasta: ' + escapeHtml(fmtDateLong(MAX_DATE)) + '</strong>' +
+      ' · Panel armado el: ' + escapeHtml(new Date(DATA.meta.generatedAt).toLocaleString('es-AR'));
     if(state.tab==='overview') renderOverview();
     else if(state.tab==='web') renderWeb();
     else if(state.tab==='analytics') renderAnalytics();
