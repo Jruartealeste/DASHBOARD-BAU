@@ -1209,12 +1209,12 @@
     const chAgg = groupSum(chRows, ['sessionDefaultChannelGroup'], ['sessions']).sort((x,y)=>y.sessions-x.sessions);
     const chTotal = chAgg.reduce((s,r)=>s+(r.sessions||0),0) || 1;
     const chItems = chAgg.map(r => ({ label: r.sessionDefaultChannelGroup, pct: Number((100*r.sessions/chTotal).toFixed(2)) }));
-    const chCard = chartCard('Sesiones por canal', 'Distribución del tráfico por canal de adquisición en el rango seleccionado.');
+    const chCard = chartCard('[GA-1] Sesiones por canal', 'Distribución del tráfico por canal de adquisición en el rango seleccionado.');
     renderDonutChart(chCard, chItems);
     demoGrid.appendChild(chCard);
 
     const evAgg = groupSum(a.events.filter(inRange), ['eventName'], ['eventCount','conversions']).sort((x,y)=>y.eventCount-x.eventCount).slice(0,10);
-    const evCard = chartCard('Acciones y conversiones', 'Top eventos por volumen, con conversiones asociadas, en el rango seleccionado.');
+    const evCard = chartCard('[GA-4] Acciones y conversiones', 'Top eventos por volumen, con conversiones asociadas, en el rango seleccionado.');
     const evRowsHtml = evAgg.map(r => `<tr><td class="content-cell">${escapeHtml(r.eventName)}</td><td class="num">${fmtCompact(r.eventCount)}</td><td class="num">${fmtCompact(r.conversions)}</td></tr>`).join('');
     evCard.insertAdjacentHTML('beforeend', `<div class="table-scroll"><table class="data-table"><thead><tr><th>Evento</th><th class="num">Ocurrencias</th><th class="num">Conversiones</th></tr></thead><tbody>${evRowsHtml}</tbody></table></div>`);
     demoGrid.appendChild(evCard);
@@ -1223,18 +1223,18 @@
     const dailyRows = (a.engagementDaily||[]).filter(inRange);
     if(dailyRows.length){
       const cards = document.createElement('div'); cards.className='cards';
-      let c = chartCard('Sesiones diarias', 'Sesiones por día en el rango seleccionado.');
+      let c = chartCard('[GA-3] Sesiones diarias', 'Sesiones por día en el rango seleccionado.');
       c.classList.add('wide');
       renderLineChart(c, [{ name:'Sesiones', color:'var(--series-web)', points: dailyRows.map(r=>({date:r.date,value:r.sessions})) }], {height:260});
       cards.appendChild(c);
-      c = chartCard('Interacción diaria', 'Tasa de interacción (sesiones interactivas / sesiones totales) por día.');
+      c = chartCard('[GA-3] Interacción diaria', 'Tasa de interacción (sesiones interactivas / sesiones totales) por día.');
       c.classList.add('wide');
       renderLineChart(c, [{ name:'Tasa de interacción', color:'var(--series-web)', points: dailyRows.map(r=>({date:r.date,value:r.engagementRate*100})), format: v => v==null?'—':fmtPct(v) }], {height:260});
       cards.appendChild(c);
       content.appendChild(cards);
     }
 
-    content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:20px 0 10px">Google vs. Meta vs. otros medios</h3>');
+    content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:20px 0 10px">[GA-1, GA-7] Google vs. Meta vs. otros medios</h3>');
     let cards2 = document.createElement('div'); cards2.className='cards';
     const scAgg = groupSum(a.sourceComparison.filter(inRange), ['sessionSource','sessionMedium'], ['sessions','totalUsers','engagedSessions','conversions'])
       .map(r => ({ ...r, engagementRatePct: r.sessions ? 100*r.engagedSessions/r.sessions : null }));
@@ -1251,7 +1251,7 @@
     cards2.appendChild(card);
     content.appendChild(cards2);
 
-    content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:20px 0 10px">Sesiones por campaña</h3>');
+    content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:20px 0 10px">[GA-1] Sesiones por campaña</h3>');
     cards2 = document.createElement('div'); cards2.className='cards';
     const cpAgg = groupSum(a.campaigns.filter(inRange), ['sessionCampaignName','sessionSource','sessionMedium'], ['sessions','totalUsers','conversions']);
     card = sortableCard('', 'Sesiones, usuarios y conversiones por campaña de marketing, en el rango seleccionado · hacé clic en una columna para ordenar', [
@@ -1267,7 +1267,7 @@
     cards2.appendChild(card);
     content.appendChild(cards2);
 
-    content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:20px 0 10px">Rendimiento de páginas de entrada</h3>');
+    content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:20px 0 10px">[GA-2] Rendimiento de páginas de entrada</h3>');
     cards2 = document.createElement('div'); cards2.className='cards';
     const lpAgg = groupSum(a.landingPages.filter(inRange), ['landingPage'], ['sessions','totalUsers','engagedSessions','userEngagementDuration','conversions'])
       .map(r => ({
@@ -1290,7 +1290,7 @@
     cards2.appendChild(card);
     content.appendChild(cards2);
 
-    content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:20px 0 10px">Abandono por página de entrada y dispositivo</h3>');
+    content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:20px 0 10px">[GA-6] Abandono por página de entrada y dispositivo</h3>');
     cards2 = document.createElement('div'); cards2.className='cards';
     const bpAgg = groupSum(a.bounceByPageDevice.filter(inRange), ['landingPage','deviceCategory'], ['sessions','engagedSessions'])
       .map(r => ({ ...r, bounceRatePct: r.sessions ? 100*(1 - r.engagedSessions/r.sessions) : null }));
@@ -1331,7 +1331,7 @@
       grid.appendChild(statTile('Alcance total', fmtCompact(sum(rows,'reach')||0)));
       content.appendChild(grid);
 
-      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:16px 0 10px">Meta Ads — Campañas</h3>');
+      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:16px 0 10px">[Meta-1, Meta-5, Meta-7] Meta Ads — Campañas</h3>');
       const cards = document.createElement('div'); cards.className='cards';
       const card = sortableCard('', 'Objetivo, alcance, frecuencia (impresiones/alcance), inversión, clics y resultado principal por campaña · hacé clic en una columna para ordenar', [
         { label:'Campaña', key:'name', kind:'text' },
@@ -1362,7 +1362,7 @@
       grid.appendChild(statTile('Clics totales', fmtCompact(sum(rows,'clicks')||0)));
       content.appendChild(grid);
 
-      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:16px 0 10px">Google Ads — Campañas</h3>');
+      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:16px 0 10px">[GAds-5, GAds-9] Google Ads — Campañas</h3>');
       const cards = document.createElement('div'); cards.className='cards';
       const card = sortableCard('', 'Impresiones, clics, CTR, inversión y conversiones por campaña · hacé clic en una columna para ordenar', [
         { label:'Campaña', key:'name', kind:'text' },
@@ -1383,7 +1383,7 @@
         ctr: r.impressions ? r.clicks/r.impressions*100 : null,
         cost: r.cost, conversions: r.conversions,
       }));
-      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:16px 0 10px">Google Ads — Palabras clave</h3>');
+      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:16px 0 10px">[GAds-1] Google Ads — Palabras clave</h3>');
       const cards = document.createElement('div'); cards.className='cards';
       const card = sortableCard('', `${rows.length} palabras clave con impresión en el período histórico · hacé clic en una columna para ordenar`, [
         { label:'Campaña', key:'campaign', kind:'text' },
@@ -1407,7 +1407,7 @@
 
       if(gm.keywords && gm.keywords.length){
         const rows = gm.keywords.map(r => ({ keyword: r.keyword, matchType: r.matchType, clicks: r.clicks, ctr: r.ctr, cost: r.cost }));
-        const card = sortableCard('Palabras clave — tipo de coincidencia', `${rows.length} palabras clave · hacé clic en una columna para ordenar`, [
+        const card = sortableCard('[GAds-1, GAds-2] Palabras clave — tipo de coincidencia', `${rows.length} palabras clave · hacé clic en una columna para ordenar`, [
           { label:'Palabra clave', key:'keyword', kind:'text' },
           { label:'Tipo de coincidencia', key:'matchType', kind:'text' },
           { label:'Clics', key:'clicks', kind:'int' },
@@ -1419,7 +1419,7 @@
       }
 
       if(gm.searchTerms && gm.searchTerms.length){
-        const card = sortableCard('Búsquedas reales que activaron los anuncios', `${gm.searchTerms.length} búsquedas · hacé clic en una columna para ordenar`, [
+        const card = sortableCard('[GAds-4] Búsquedas reales que activaron los anuncios', `${gm.searchTerms.length} búsquedas · hacé clic en una columna para ordenar`, [
           { label:'Búsqueda', key:'searchTerm', kind:'text' },
           { label:'Impresiones', key:'impressions', kind:'int' },
           { label:'Clics', key:'clicks', kind:'int' },
@@ -1431,7 +1431,7 @@
       }
 
       if(gm.devices && gm.devices.length){
-        const card = sortableCard('Dispositivos', 'Por campaña y dispositivo · hacé clic en una columna para ordenar', [
+        const card = sortableCard('[GAds-8c] Dispositivos', 'Por campaña y dispositivo · hacé clic en una columna para ordenar', [
           { label:'Dispositivo', key:'device', kind:'text' },
           { label:'Campaña', key:'campaign', kind:'text' },
           { label:'Impresiones', key:'impressions', kind:'int' },
@@ -1444,7 +1444,7 @@
       }
 
       if(gm.landingPages && gm.landingPages.length){
-        const card = sortableCard('Páginas de destino', 'Rendimiento por página de destino · hacé clic en una columna para ordenar', [
+        const card = sortableCard('[GAds-8d] Páginas de destino', 'Rendimiento por página de destino · hacé clic en una columna para ordenar', [
           { label:'Página', key:'landingPage', kind:'text' },
           { label:'Clics', key:'clicks', kind:'int' },
           { label:'Impresiones', key:'impressions', kind:'int' },
@@ -1456,7 +1456,7 @@
       }
 
       if(gm.locations && gm.locations.length){
-        const card = sortableCard('Ubicaciones', `${gm.locations.length} ubicación × campaña · hacé clic en una columna para ordenar`, [
+        const card = sortableCard('[GAds-8b] Ubicaciones', `${gm.locations.length} ubicación × campaña · hacé clic en una columna para ordenar`, [
           { label:'Ubicación', key:'location', kind:'text' },
           { label:'Campaña', key:'campaign', kind:'text' },
           { label:'Clics', key:'clicks', kind:'int' },
@@ -1482,7 +1482,7 @@
         amountSpent: r.amountSpent, impressions: r.impressions, linkClicks: r.linkClicks, allClicks: r.allClicks,
         landingPageViews: r.landingPageViews,
       }));
-      const card = sortableCard('Campañas — detalle', 'Objetivo, resultados, alcance, frecuencia, presupuesto y clics por campaña · hacé clic en una columna para ordenar', [
+      const card = sortableCard('[Meta-1, Meta-5, Meta-7] Campañas — detalle', 'Objetivo, resultados, alcance, frecuencia, presupuesto y clics por campaña · hacé clic en una columna para ordenar', [
         { label:'Campaña', key:'name', kind:'text' },
         { label:'Objetivo', key:'objective', kind:'text' },
         { label:'Indicador de resultado', key:'resultIndicator', kind:'text' },
@@ -1504,7 +1504,7 @@
 
     if(mm && mm.audiences?.length){
       const cards = document.createElement('div'); cards.className='cards';
-      const card = sortableCard('Públicos alcanzados — edad y sexo', `${mm.audiences.length} filas (campaña × edad × sexo) · hacé clic en una columna para ordenar`, [
+      const card = sortableCard('[Meta-2] Públicos alcanzados — edad y sexo', `${mm.audiences.length} filas (campaña × edad × sexo) · hacé clic en una columna para ordenar`, [
         { label:'Campaña', key:'campaign', kind:'text' },
         { label:'Edad', key:'age', kind:'text' },
         { label:'Sexo', key:'gender', kind:'text' },
@@ -1519,7 +1519,7 @@
 
     if(mm && mm.placements?.length){
       const cards = document.createElement('div'); cards.className='cards';
-      const card = sortableCard('Plataformas y ubicaciones', `${mm.placements.length} filas (conjunto de anuncios × plataforma × ubicación × dispositivo) · presupuesto y gasto reales, a nivel conjunto de anuncios · hacé clic en una columna para ordenar`, [
+      const card = sortableCard('[Meta-1, Meta-3] Plataformas y ubicaciones', `${mm.placements.length} filas (conjunto de anuncios × plataforma × ubicación × dispositivo) · presupuesto y gasto reales, a nivel conjunto de anuncios · hacé clic en una columna para ordenar`, [
         { label:'Conjunto de anuncios', key:'adSet', kind:'text' },
         { label:'Plataforma', key:'platform', kind:'text' },
         { label:'Ubicación', key:'placement', kind:'text' },
@@ -1538,7 +1538,7 @@
     if(mm && mm.video?.length){
       const rows = mm.video.map(r => ({ ...r, avgWatchTime: fmtDuration(r.avgWatchTimeSec) }));
       const cards = document.createElement('div'); cards.className='cards';
-      const card = sortableCard('Reproducciones y tiempo de visualización', `${rows.length} anuncios · presupuesto real a nivel conjunto de anuncios · hacé clic en una columna para ordenar`, [
+      const card = sortableCard('[Meta-5, Meta-6] Reproducciones y tiempo de visualización', `${rows.length} anuncios · presupuesto real a nivel conjunto de anuncios · hacé clic en una columna para ordenar`, [
         { label:'Anuncio', key:'adName', kind:'text' },
         { label:'Estado', key:'delivery', kind:'text' },
         { label:'Alcance', key:'reach', kind:'int' },
