@@ -41,24 +41,10 @@ const igEvolution = sortByDate(rowsToObjects(loadRaw("ig_evolution.json")));
 const liEvolution = sortByDate(rowsToObjects(loadRaw("li_evolution.json")));
 const ytEvolution = sortByDate(rowsToObjects(loadRaw("yt_evolution.json")));
 const wtEvolution = sortByDate(rowsToObjects(loadRaw("wt_evolution.json")));
-const gaEvolution = sortByDate(rowsToObjects(loadRaw("google_ads.json")));
 
 const igPosts = sortByDate(rowsToObjects(loadRaw("ig_posts.json"))).reverse();
 const liPosts = sortByDate(rowsToObjects(loadRaw("li_posts.json"))).reverse();
 const ytVideos = sortByDate(rowsToObjects(loadRaw("yt_videos.json"))).reverse();
-
-const metaAdsByDate = new Map(rowsToObjects(loadRaw("meta_ads.json")).map((r) => [r.date, r]));
-const organicReachByDate = new Map(rowsToObjects(loadRaw("ig_organic_reach.json")).map((r) => [r.date, r]));
-
-igEvolution.forEach((row) => {
-  const ads = metaAdsByDate.get(row.date);
-  const organic = organicReachByDate.get(row.date);
-  row.organicPostsReach = organic ? organic.postsReach : null;
-  row.paidImpressions = ads ? ads.impressions : null;
-  row.paidReach = ads ? ads.reach : null;
-  row.paidSpend = ads ? ads.spent : null;
-  row.paidClicks = ads ? ads.clicks : null;
-});
 
 function topSourcesWithOther(raw, topN = 5) {
   const rows = raw.rows.map(([source, traffic]) => ({ label: source, value: Number(traffic) }));
@@ -79,99 +65,13 @@ const web = {
   topPages: topPages(loadRaw("wt_pages.json")),
 };
 
-// Google Ads / Meta Ads campaign & keyword breakdowns (Metricool "campaigns"/
-// "keyworks" connectors — not the daily "evolution" connector above). These are
-// full-history snapshots, not tied to a date range, so they're plain field/row
-// tables rather than the date-indexed shape used for evolution data.
-function rawToRows(raw) {
-  const { fields, rows } = raw;
-  return rows.map((row) => {
-    const obj = {};
-    fields.forEach((field, i) => {
-      obj[field] = row[i];
-    });
-    return obj;
-  });
-}
-
-const googleAdsCampaigns = rawToRows(loadRaw("google_ads_campaigns.json"));
-const googleAdsKeywords = rawToRows(loadRaw("google_ads_keywords.json"));
-const metaAdsCampaigns = rawToRows(loadRaw("meta_ads_campaigns.json"));
-
-// Manually exported from the Google Ads UI (see data/manual-exports/) via
-// scripts/parse-google-ads-manual.js — a periodic snapshot, not a live feed,
-// so these are optional: if they haven't been generated yet, skip quietly.
-function loadRawOptional(name) {
-  try {
-    return rawToRows(loadRaw(name));
-  } catch {
-    return [];
-  }
-}
-const googleAdsManualKeywords = loadRawOptional("google_ads_manual_keywords.json");
-const googleAdsManualSearchTerms = loadRawOptional("google_ads_manual_search_terms.json");
-const googleAdsManualDevices = loadRawOptional("google_ads_manual_devices.json");
-const googleAdsManualLandingPages = loadRawOptional("google_ads_manual_landing_pages.json");
-const googleAdsManualLocations = loadRawOptional("google_ads_manual_locations.json");
-
-// Manually exported from Meta Ads Manager (see data/manual-exports/) via
-// scripts/parse-meta-ads-manual.js — same periodic-snapshot deal as the
-// Google Ads manual exports above.
-const metaAdsManualCampaigns = loadRawOptional("meta_ads_manual_campaigns.json");
-const metaAdsManualAudiences = loadRawOptional("meta_ads_manual_audiences.json");
-const metaAdsManualVideo = loadRawOptional("meta_ads_manual_video.json");
-const metaAdsManualPlacements = loadRawOptional("meta_ads_manual_placements.json");
-
-const ads = {
-  googleCampaigns: googleAdsCampaigns,
-  googleKeywords: googleAdsKeywords,
-  metaCampaigns: metaAdsCampaigns,
-  googleManual: {
-    keywords: googleAdsManualKeywords,
-    searchTerms: googleAdsManualSearchTerms,
-    devices: googleAdsManualDevices,
-    landingPages: googleAdsManualLandingPages,
-    locations: googleAdsManualLocations,
-  },
-  metaManual: {
-    campaigns: metaAdsManualCampaigns,
-    audiences: metaAdsManualAudiences,
-    video: metaAdsManualVideo,
-    placements: metaAdsManualPlacements,
-  },
-};
-
-// Google Analytics 4 (Data API, scripts/fetch-ga4.js) — every report is
-// day-granular (rows are coerced numeric-where-possible), so the dashboard
-// can filter by the selected date range and re-aggregate client-side, same
-// as the evolution-based tabs. Rates aren't stored here (not additive across
-// days) — only counts; the dashboard recomputes rates after summing.
-function ga4RowsToObjects(raw) {
-  const { fields, rows } = raw;
-  return rows.map((row) => {
-    const obj = {};
-    fields.forEach((field, i) => {
-      const value = row[i];
-      if (field === "date") {
-        obj[field] = toISODate(value);
-        return;
-      }
-      const n = Number(value);
-      obj[field] = value !== "" && !Number.isNaN(n) ? n : value;
-    });
-    return obj;
-  });
-}
-
-const analytics = {
-  channels: sortByDate(ga4RowsToObjects(loadRaw("ga4_channels.json"))),
-  sourceComparison: sortByDate(ga4RowsToObjects(loadRaw("ga4_source_comparison.json"))),
-  campaigns: sortByDate(ga4RowsToObjects(loadRaw("ga4_campaigns.json"))),
-  landingPages: sortByDate(ga4RowsToObjects(loadRaw("ga4_landing_pages.json"))),
-  engagementDaily: sortByDate(ga4RowsToObjects(loadRaw("ga4_engagement_daily.json"))),
-  events: sortByDate(ga4RowsToObjects(loadRaw("ga4_events.json"))),
-  bounceByPageDevice: sortByDate(ga4RowsToObjects(loadRaw("ga4_bounce_by_page_device.json"))),
-};
+// Google Ads, Meta Ads, and Google Analytics 4 were removed from the shipped
+// dashboard on request (2026-08-27) — the loaders that used to assemble
+// `ads` and `analytics` (Metricool campaign/keyword snapshots, the manual
+// CSV exports, and the GA4 Data API pull) lived here. The underlying raw
+// files, fetch scripts, and dashboard.template.html render functions are
+// still in the repo/history untouched, so this is easy to bring back — just
+// not wired into the dataset the page ships with for now.
 
 const dataset = {
   meta: {
@@ -191,7 +91,6 @@ const dataset = {
     linkedin: liEvolution,
     youtube: ytEvolution,
     website: wtEvolution,
-    googleAds: gaEvolution,
   },
   topContent: {
     instagram: igPosts,
@@ -199,8 +98,6 @@ const dataset = {
     youtube: ytVideos,
   },
   web,
-  ads,
-  analytics,
 };
 
 fs.writeFileSync(OUT_PATH, JSON.stringify(dataset));
@@ -209,9 +106,4 @@ console.log(`  instagram evolution rows: ${igEvolution.length}`);
 console.log(`  linkedin evolution rows: ${liEvolution.length}`);
 console.log(`  youtube evolution rows: ${ytEvolution.length}`);
 console.log(`  website evolution rows: ${wtEvolution.length}`);
-console.log(`  google ads evolution rows: ${gaEvolution.length}`);
 console.log(`  instagram posts: ${igPosts.length}, linkedin posts: ${liPosts.length}, youtube videos: ${ytVideos.length}`);
-console.log(`  google ads campaigns: ${googleAdsCampaigns.length}, keywords: ${googleAdsKeywords.length}`);
-console.log(`  google ads manual: keywords ${googleAdsManualKeywords.length}, search terms ${googleAdsManualSearchTerms.length}, devices ${googleAdsManualDevices.length}, landing pages ${googleAdsManualLandingPages.length}, locations ${googleAdsManualLocations.length}`);
-console.log(`  meta ads campaigns: ${metaAdsCampaigns.length}`);
-console.log(`  ga4 channels: ${analytics.channels.length}, campaigns: ${analytics.campaigns.length}, landing pages: ${analytics.landingPages.length}, events: ${analytics.events.length}`);

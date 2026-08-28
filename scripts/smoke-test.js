@@ -28,7 +28,7 @@ const html = fs.readFileSync(path.join(__dirname, "..", "dist", "dashboard.html"
 
   checkBadText("initial (overview, 30d)");
 
-  const tabs = ["Instagram", "LinkedIn", "YouTube", "Sitio Web", "Google Analytics", "Publicidad", "Resumen"];
+  const tabs = ["Instagram", "LinkedIn", "YouTube", "Sitio Web", "Resumen"];
   for (const label of tabs) {
     const btn = [...doc.querySelectorAll("#tabs button")].find((b) => b.textContent === label);
     if (!btn) throw new Error(`tab button not found: ${label}`);

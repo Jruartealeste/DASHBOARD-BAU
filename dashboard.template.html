@@ -360,8 +360,6 @@
     { key:'linkedin', label:'LinkedIn' },
     { key:'youtube', label:'YouTube' },
     { key:'web', label:'Sitio Web' },
-    { key:'analytics', label:'Google Analytics' },
-    { key:'ads', label:'Publicidad' },
   ];
   function renderTabs(){
     const el = document.getElementById('tabs');
@@ -911,33 +909,6 @@
       cards.appendChild(c);
       content.appendChild(cards);
 
-      // orgánico vs. pago (Meta Ads está conectado para esta cuenta)
-      const orgReach = sum(rows,'organicPostsReach')||0, orgReachPrev = sum(rowsPrev,'organicPostsReach')||0;
-      const paidReach = sum(rows,'paidReach')||0, paidReachPrev = sum(rowsPrev,'paidReach')||0;
-      const paidSpend = sum(rows,'paidSpend')||0, paidSpendPrev = sum(rowsPrev,'paidSpend')||0;
-      const paidClicksSum = sum(rows,'paidClicks')||0;
-      const paidImpressionsSum = sum(rows,'paidImpressions')||0;
-      const paidCtr = paidImpressionsSum ? paidClicksSum/paidImpressionsSum*100 : null;
-      const paidCtrPrev = (sum(rowsPrev,'paidImpressions')||0) ? (sum(rowsPrev,'paidClicks')||0)/(sum(rowsPrev,'paidImpressions')||0)*100 : null;
-
-      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:4px 0 10px">Orgánico (Instagram) vs. pago (Meta Ads: Instagram + Facebook combinados)</h3><div class="cap" style="margin-bottom:10px">⚠ "Alcance pago" es una <strong>suma de alcance diario</strong>, no el alcance único (deduplicado) del período — el alcance no se puede sumar día a día sin contar dos veces a quien vio el anuncio en más de un día. El número real de alcance único hay que pedírselo puntualmente a la agencia, que sí tiene acceso directo a la API de Meta.</div>');
-      const paidGrid = document.createElement('div'); paidGrid.className='grid';
-      paidGrid.style.setProperty('--tile-accent', 'var(--series-web)');
-      paidGrid.appendChild(statTile('Alcance orgánico (posts, IG)', fmtCompact(orgReach), orgReach-orgReachPrev));
-      paidGrid.appendChild(statTile('Alcance pago (IG+FB, aprox.)', fmtCompact(paidReach), paidReach-paidReachPrev));
-      paidGrid.appendChild(statTile('Gasto Meta Ads (IG+FB)', fmtCompact(paidSpend), paidSpend-paidSpendPrev));
-      paidGrid.appendChild(statTile('CTR pago (IG+FB)', fmtPct(paidCtr), paidCtr!=null&&paidCtrPrev!=null?paidCtr-paidCtrPrev:null, {deltaIsPct:true}));
-      content.appendChild(paidGrid);
-
-      const paidCards = document.createElement('div'); paidCards.className='cards';
-      let pc = chartCard('Alcance orgánico diario', 'Alcance de publicaciones de Instagram (solo días con posteos, dato orgánico de Metricool).');
-      renderLineChart(pc, [{ name:'Alcance orgánico', color:NET_COLOR.instagram, points: rows.map(r=>({date:r.date,value:r.organicPostsReach})) }], {height:240, bars:true});
-      paidCards.appendChild(pc);
-      pc = chartCard('Alcance pago diario (aprox.)', 'Alcance diario de campañas de Meta Ads (Instagram + Facebook combinados) — sumar estas barras sobrestima el alcance real del período, ver nota arriba.');
-      renderLineChart(pc, [{ name:'Alcance pago', color:'var(--series-web)', points: rows.map(r=>({date:r.date,value:r.paidReach})) }], {height:240});
-      paidCards.appendChild(pc);
-      content.appendChild(paidCards);
-
     } else if(network==='linkedin'){
       const followers = lastVal(rows,'followers'), followersPrev = lastVal(rowsPrev,'followers');
       const impressions = sum(rows,'accountPostImpressions')||0, impressionsPrev = sum(rowsPrev,'accountPostImpressions')||0;
@@ -1059,30 +1030,6 @@
       content.appendChild(demoGrid);
     }
 
-    if(DATA.evolution.googleAds && DATA.evolution.googleAds.length){
-      const gaRows = DATA.evolution.googleAds.filter(inRange);
-      const gaRowsPrev = DATA.evolution.googleAds.filter(r=>r.date>=prev.from && r.date<=prev.to);
-      const gaImpressions = sum(gaRows,'impressions')||0, gaImpressionsPrev = sum(gaRowsPrev,'impressions')||0;
-      const gaSpend = sum(gaRows,'spent')||0, gaSpendPrev = sum(gaRowsPrev,'spent')||0;
-      const gaClicks = sum(gaRows,'clicks')||0, gaClicksPrev = sum(gaRowsPrev,'clicks')||0;
-
-      content.insertAdjacentHTML('beforeend', '<h3 style="font-size:13.5px;margin:20px 0 10px">Google Ads</h3>');
-      const gaGrid = document.createElement('div'); gaGrid.className='grid';
-      gaGrid.style.setProperty('--tile-accent', 'var(--series-gads)');
-      gaGrid.appendChild(statTile('Impresiones', fmtCompact(gaImpressions), gaImpressions-gaImpressionsPrev));
-      gaGrid.appendChild(statTile('Inversión', fmtCompact(gaSpend), gaSpend-gaSpendPrev));
-      gaGrid.appendChild(statTile('Clics', fmtCompact(gaClicks), gaClicks-gaClicksPrev));
-      content.appendChild(gaGrid);
-
-      const gaCards = document.createElement('div'); gaCards.className='cards';
-      let gc = chartCard('Impresiones diarias (Google Ads)', 'Veces que se mostraron los anuncios de búsqueda/display.');
-      renderLineChart(gc, [{ name:'Impresiones', color:'var(--series-gads)', points: gaRows.map(r=>({date:r.date,value:r.impressions})) }], {height:240});
-      gaCards.appendChild(gc);
-      gc = chartCard('Inversión diaria (Google Ads)', 'Gasto en campañas de Google Ads por día.');
-      renderLineChart(gc, [{ name:'Inversión', color:'var(--series-gads)', points: gaRows.map(r=>({date:r.date,value:r.spent})), format: v => v==null?'—':'$'+fmtCompact(v) }], {height:240, bars:true});
-      gaCards.appendChild(gc);
-      content.appendChild(gaCards);
-    }
   }
 
   // ---------- generic sortable data table (used by the ads/analytics tabs) ----------
@@ -1602,8 +1549,6 @@
       ' · Panel armado el: ' + escapeHtml(new Date(DATA.meta.generatedAt).toLocaleString('es-AR'));
     if(state.tab==='overview') renderOverview();
     else if(state.tab==='web') renderWeb();
-    else if(state.tab==='analytics') renderAnalytics();
-    else if(state.tab==='ads') renderAds();
     else renderNetwork(state.tab);
   }
 
